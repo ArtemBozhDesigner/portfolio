@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>About — Artem Shevliakov, Product Designer</title>
+  <meta name="description" content="Artem Shevliakov — product designer with 5+ years of experience in fintech, B2B, B2C and SaaS. Experience, education and contacts.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============ Tokens (shared with index.html) ============ */
+    :root {
+      color-scheme: light;
+
+      --bg-page: #f9fafb;
+      --bg-card: #f1f2f4;
+      --bg-surface: #ffffff;
+      --bg-nav: rgba(242, 244, 246, 0.8);
+      --border-subtle: #e7eaed;
+      --border-divider: #ebecef;
+      --text-primary: #131415;
+      --text-title: #1b1b1b;
+      --text-secondary: #5c5c5c;
+      --text-muted: #6d7378;
+      --text-tertiary: #707070;
+      --text-meta: rgba(10, 13, 15, 0.4);
+      --text-nav-active: #242628;
+
+      --font-heading: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-body: "Inter Tight", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+      --radius-badge: 16px;
+      --radius-pill: 999px;
+
+      --content: 480px;
+      --section-gap: 52px;
+
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+    *, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 24px;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    :focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
+
+    .container {
+      width: 100%;
+      max-width: calc(var(--content) + 64px);
+      margin: 0 auto;
+      padding: 0 32px 96px;
+    }
+
+    /* ============ Nav ============ */
+    .nav-wrap {
+      position: sticky;
+      top: env(safe-area-inset-top, 0px);
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      padding: 12px 0;
+    }
+    .nav {
+      display: flex;
+      padding: 4px;
+      background: var(--bg-nav);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+    .nav a {
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      transition: color .15s;
+    }
+    .nav a:hover { color: var(--text-nav-active); }
+    .nav a[aria-current="page"] {
+      color: var(--text-nav-active);
+      background: var(--bg-surface);
+      box-shadow: 0 1px 2px rgba(128, 135, 141, 0.1);
+    }
+
+    /* ============ Badge (large) ============
+       Figma desktop: badge 480×200, its top 142px from the page top; the nav above is 62px tall */
+    .badge-block {
+      position: relative;
+      height: 280px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .badge-wrap { position: relative; width: 480px; max-width: 100%; }
+    .badge {
+      position: relative;
+      display: flex;
+      width: 100%;
+      height: 200px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-badge);
+      overflow: hidden;
+    }
+    .badge-side {
+      position: relative;
+      flex: 0 0 30px;
+      min-width: 0;
+      background: #e3e5e8;
+    }
+    .badge-side span {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) rotate(-90deg);
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 18px;
+      color: #b2b8bd;
+      white-space: nowrap;
+    }
+    .badge-person {
+      flex: 0 1 225px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 8px;
+      text-align: center;
+    }
+    .avatar {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #dfe2e6;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .avatar .avatar-alt { position: absolute; inset: 0; visibility: hidden; }
+    .avatar .avatar-alt.is-shown { visibility: visible; }
+    .badge-name {
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 24px;
+      white-space: nowrap;
+    }
+    .badge-role {
+      margin-top: 2px;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+    .badge-facts {
+      flex: 1 1 225px;
+      min-width: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8px 32px 0 8px;
+    }
+    .badge-facts li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 0;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-tertiary);
+      white-space: nowrap;
+    }
+    .badge-facts li + li { border-top: 1px solid var(--border-divider); }
+    .badge-facts svg { flex: 0 0 18px; }
+    .badge-hole {
+      position: absolute;
+      left: 50%;
+      top: 12px;
+      width: 16px;
+      height: 16px;
+      transform: translateX(-50%);
+      background: var(--bg-card);
+      border: solid #e6e6e6;
+      border-width: 0 0.667px 1.333px;
+      border-radius: 50%;
+    }
+    /* Lanyard: 35×200 on desktop, its clip ends over the hole (23px below the badge top) */
+    .lanyard {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% - 23px);
+      width: 35.4px;
+      height: 200px;
+      transform: translateX(-50%);
+      z-index: 2;
+      pointer-events: none;
+    }
+    .lanyard img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ============ Intro & toolkit ============ */
+    .intro-group { display: flex; flex-direction: column; gap: 36px; margin-top: var(--section-gap); }
+    .lead p { font-size: 18px; line-height: 28px; color: var(--text-secondary); }
+    .lead p + p { margin-top: 12px; }
+
+    .toolkit h2 {
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 28px;
+      color: var(--text-title);
+      margin-bottom: 16px;
+    }
+    .tools {
+      display: inline-flex;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 22px;
+      border: 1px solid var(--border-subtle);
+      background: #f2f4f6;
+      list-style: none;
+    }
+    .tool {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      transition: transform .35s cubic-bezier(.33, 1, .68, 1);
+    }
+    @media (hover: hover) {
+      .tool:hover { transform: scale(1.2); z-index: 1; }
+    }
+    .tool:not(:has(img)) { background: #e3e5e8; }
+    .tool img { display: block; width: 42px; height: 42px; }
+    .tool--chatgpt img { position: absolute; left: -1px; top: 0; width: 44px; height: 44px; max-width: none; }
+
+    /* ============ Sections: Experience / Education / Contacts ============ */
+    .section { margin-top: var(--section-gap); }
+    .section > h2 {
+      font-weight: 500;
+      font-size: 24px;
+      line-height: 32px;
+      color: var(--text-title);
+      margin-bottom: 26px;
+    }
+    .entries { list-style: none; }
+    .entry + .entry {
+      margin-top: 26px;
+      padding-top: 26px;
+      border-top: 1px solid var(--border-divider);
+    }
+    /* Desktop: role ⟷ organisation on one line, date below */
+    .entry-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      column-gap: 16px;
+      row-gap: 4px;
+    }
+    .entry-role {
+      font-weight: 500;
+      font-size: 20px;
+      line-height: 28px;
+      color: var(--text-title);
+    }
+    .entry-org {
+      font-size: 20px;
+      line-height: 28px;
+      color: var(--text-meta);
+      white-space: nowrap;
+    }
+    .entry-date {
+      flex-basis: 100%;
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--text-meta);
+    }
+    .entry-desc {
+      margin-top: 12px;
+      font-size: 18px;
+      line-height: 28px;
+      color: var(--text-secondary);
+    }
+
+    .contacts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 18px;
+      line-height: 28px;
+      color: var(--text-secondary);
+    }
+    .contacts-list a { transition: color .15s; }
+    .contacts-list a:hover { color: var(--text-primary); }
+    .links { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+
+    /* ============ Mobile (Figma: 375) ============ */
+    @media (max-width: 719px) {
+      .container { padding: 0 16px 64px; }
+      .nav-wrap { padding: 12px 0 8px; }
+
+      /* Badge 343×155, top 87px from the page top (nav is 58px tall) */
+      .badge-block { height: 184px; }
+      .badge-wrap { width: 343px; }
+      .badge { height: 155px; }
+      .badge-side { flex-basis: 28px; }
+      .badge-person { flex: 0 1 152px; padding: 0 8px 0 0; }
+      .avatar { width: 60px; height: 60px; }
+      .badge-name { font-size: 14px; line-height: 20px; }
+      .badge-role { margin-top: 0; font-size: 13px; line-height: 18px; }
+      .badge-facts { flex-basis: 163px; padding: 18px 8px 0 8px; }
+      .badge-facts li { font-size: 13px; line-height: 18px; }
+      .badge-hole { top: 12px; }
+      .lanyard { width: 24px; height: 135.6px; bottom: calc(100% - 20.6px); }
+
+      /* Entries: organisation and date share one muted line */
+      .entry-head { justify-content: flex-start; column-gap: 4px; }
+      .entry-role { flex-basis: 100%; font-size: 18px; line-height: 24px; }
+      .entry-org { font-size: 16px; line-height: 24px; }
+      .entry-date { flex-basis: auto; }
+      .entry-desc { font-size: 16px; line-height: 24px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="nav-wrap">
+    <nav class="nav" aria-label="Main">
+      <a href="/">Home</a>
+      <a href="/about" aria-current="page">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== Badge ===== -->
+    <div class="badge-block">
+      <div class="badge-wrap">
+        <div class="badge">
+          <div class="badge-side"><span>Design Department</span></div>
+          <div class="badge-person">
+            <div class="avatar">
+              <img src="assets/avatar.webp" alt="Artem Shevliakov" onerror="this.remove()">
+              <img class="avatar-alt" src="assets/avatar-2.webp" alt="" aria-hidden="true" onerror="this.remove()">
+              <img class="avatar-alt" src="assets/avatar-3.webp" alt="" aria-hidden="true" onerror="this.remove()">
+              <img class="avatar-alt" src="assets/avatar-4.webp" alt="" aria-hidden="true" onerror="this.remove()">
+              <img class="avatar-alt" src="assets/avatar-5.webp" alt="" aria-hidden="true" onerror="this.remove()">
+            </div>
+            <div>
+              <h1 class="badge-name">Artem Shevliakov</h1>
+              <p class="badge-role">Product Designer</p>
+            </div>
+          </div>
+          <ul class="badge-facts">
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7.5 4.5c.45 2.7 1.8 4.05 4.5 4.5-2.7.45-4.05 1.8-4.5 4.5C7.05 10.8 5.7 9.45 3 9c2.7-.45 4.05-1.8 4.5-4.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M13.25 2.25c.2.95.55 1.3 1.5 1.5-.95.2-1.3.55-1.5 1.5-.2-.95-.55-1.3-1.5-1.5.95-.2 1.3-.55 1.5-1.5Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>AI Fluent</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="2.25" y="5.25" width="13.5" height="9.75" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 5.25V4a1.25 1.25 0 0 1 1.25-1.25h2.5A1.25 1.25 0 0 1 11.5 4v1.25M2.25 9.25h13.5" stroke="currentColor" stroke-width="1.3"/></svg>B2B · B2C · SaaS</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 15.75s5.25-4.1 5.25-8.25a5.25 5.25 0 0 0-10.5 0c0 4.15 5.25 8.25 5.25 8.25Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="9" cy="7.5" r="1.9" stroke="currentColor" stroke-width="1.3"/></svg>Based in Prague</li>
+          </ul>
+          <div class="badge-hole" aria-hidden="true"></div>
+        </div>
+        <div class="lanyard" aria-hidden="true">
+          <img src="assets/lanyard.png" alt="" onerror="this.remove()">
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Intro & toolkit ===== -->
+    <section class="intro-group">
+      <!-- DRAFT: intro assembled from Artem's own facts (experience, projects, degree) — review before publishing -->
+      <div class="lead">
+        <p>Hey, I’m Artem, a product designer with 5+ years of experience in fintech, B2B, B2C and SaaS products. Based in Prague.</p>
+        <p>Since 2021 I’ve worked on 85+ projects at Bozhenko Design Club and with international clients on Upwork, taking products from research and hypotheses to tested, <span style="white-space:nowrap">ready-to-build</span> interfaces.</p>
+        <p>With a degree in software engineering, I design with implementation in mind and work closely with developers, from design systems to handoff.</p>
+      </div>
+
+      <div class="toolkit">
+        <h2>Current Toolkit</h2>
+        <ul class="tools" aria-label="Current toolkit">
+          <li class="tool"><img src="assets/tools/figma.svg" alt="Figma" onerror="this.remove()"></li>
+          <li class="tool"><img src="assets/tools/photoshop.svg" alt="Photoshop" onerror="this.remove()"></li>
+          <li class="tool"><img src="assets/tools/claude.svg" alt="Claude" onerror="this.remove()"></li>
+          <li class="tool tool--chatgpt"><img src="assets/tools/chatgpt.svg" alt="ChatGPT" onerror="this.remove()"></li>
+          <li class="tool"><img src="assets/tools/obsidian.svg" alt="Obsidian" onerror="this.remove()"></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== Experience ===== -->
+    <section class="section" aria-labelledby="experience">
+      <h2 id="experience">Experience</h2>
+      <ol class="entries">
+        <li class="entry">
+          <div class="entry-head">
+            <h3 class="entry-role">Product &amp; UX/UI Designer</h3>
+            <span class="entry-org">Upwork</span>
+            <span class="entry-date">From Sep 2023</span>
+          </div>
+          <p class="entry-desc">Worked independently with international clients on SaaS, B2B, web, and mobile products, covering the full design process from UX structure and prototyping to polished UI, design systems, and developer handoff. Delivered 4,800+ hours of client work, maintaining Top Rated Plus status and a 100% Job Success Score.</p>
+        </li>
+        <li class="entry">
+          <div class="entry-head">
+            <h3 class="entry-role">Product &amp; UX/UI Designer</h3>
+            <span class="entry-org">Bozhenko Design Club</span>
+            <span class="entry-date">From Apr 2021</span>
+          </div>
+          <p class="entry-desc">Successfully contributed to 85+ projects of varying scope and complexity. Worked on end-to-end digital product design, from early concepts and UX structure to high-fidelity interfaces and developer handoff. Translated requirements into clear user flows, responsive experiences, and scalable UI patterns, including UI kits and design systems.</p>
+        </li>
+        <li class="entry">
+          <div class="entry-head">
+            <h3 class="entry-role">Web Designer</h3>
+            <span class="entry-org">Dimarvel</span>
+            <span class="entry-date">Feb 2020 – Mar 2021</span>
+          </div>
+          <p class="entry-desc">Designed commercial websites and e-commerce experiences with responsive UI. Worked on logos, banners, and digital assets, building a foundation in visual design and usability.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== Education ===== -->
+    <section class="section" aria-labelledby="education">
+      <h2 id="education">Education</h2>
+      <ol class="entries">
+        <li class="entry">
+          <div class="entry-head">
+            <h3 class="entry-role">University of Radio Electronics</h3>
+            <span class="entry-org">Bachelor of IT</span>
+            <span class="entry-date">Sep 2019 – June 2023</span>
+          </div>
+          <p class="entry-desc">Bachelor’s degree in Software Engineering, providing a strong technical foundation in software development, system architecture, and web technologies – helping me design feasible, scalable products and collaborate effectively with developers.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ===== Contacts ===== -->
+    <section class="section" aria-labelledby="contacts">
+      <h2 id="contacts">Contact &amp; Links</h2>
+      <div class="contacts-list">
+        <a href="mailto:designartems@gmail.com">designartems@gmail.com</a>
+        <div class="links">
+          <a href="https://www.linkedin.com/in/artem-shevliakov/" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://www.behance.net/art_sh" target="_blank" rel="noopener">Behance</a>
+          <a href="https://dribbble.com/ArtShevDesign" target="_blank" rel="noopener">Dribbble</a>
+          <a href="https://www.upwork.com/freelancers/~01ff2b9b731c40380a" target="_blank" rel="noopener">Upwork</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+<script>
+  // Badge: while hovered, cycle through all avatars every 0.5s (loops); back to the main photo on leave
+  (function () {
+    var mq = window.matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)');
+    var badge = document.querySelector('.badge-wrap');
+    if (!badge) return;
+    var alts = Array.prototype.slice.call(badge.querySelectorAll('.avatar-alt'));
+    if (!alts.length) return;
+    var timer = null, i = -1;
+    function show(n) {
+      alts.forEach(function (img, k) { img.classList.toggle('is-shown', k === n); });
+    }
+    function step() { i = (i + 1) % (alts.length + 1); show(i === alts.length ? -1 : i); }
+    badge.addEventListener('pointerenter', function () {
+      if (!mq.matches || timer) return;
+      step();
+      timer = setInterval(step, 500);
+    });
+    badge.addEventListener('pointerleave', function () {
+      clearInterval(timer); timer = null; i = -1; show(-1);
+    });
+  })();
+</script>
+</body>
+</html>

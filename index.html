@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Artem Shevliakov — Product Designer</title>
+  <meta name="description" content="Product designer portfolio: case studies, process and contacts.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Inter+Tight:wght@400;500&family=Kalam&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============ Tokens (from Figma) ============ */
+    :root {
+      color-scheme: light;
+
+      /* Color */
+      --bg-page: #f9fafb;
+      --bg-card: #f1f2f4;
+      --bg-surface: #ffffff;
+      --bg-nav: rgba(242, 244, 246, 0.8);
+      --border-subtle: #e7eaed;
+      --border-divider: #ebecef;
+      --text-primary: #131415;
+      --text-title: #1b1b1b;
+      --text-secondary: #5c5c5c;
+      --text-muted: #6d7378;
+      --text-tertiary: #707070;
+      --text-nav-active: #242628;
+      --btn-primary-outer: #2d2e36;
+      --btn-primary-top: #2b2c31;
+      --btn-primary-bottom: #0a0a0c;
+      --btn-primary-bg-hover: #0a0a0c;
+      --btn-primary-bg-pressed: #2e2e38;
+      --btn-primary-focus-ring: #e8eaed;
+      --btn-secondary-bg: #ffffff;
+      --btn-secondary-bg-hover: #f3f5f7;
+      --btn-secondary-bg-pressed: #e7ebef;
+      --btn-secondary-border: #e7eaed;
+      --btn-secondary-border-pressed: #e2e5e9;
+
+      /* Type */
+      --font-heading: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-body: "Inter Tight", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-hand: "Kalam", "Comic Sans MS", cursive;
+
+      /* Radius */
+      --radius-card: 32px;
+      --radius-case: 32px;
+      --radius-badge: 16px;
+      --radius-pill: 999px;
+
+      /* Layout */
+      --container: 920px;
+      --grid-gap: 16px;
+      --section-gap: 64px;
+      --text-inset: 0px;
+
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+    *, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    :focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
+
+    .container {
+      width: 100%;
+      max-width: calc(var(--container) + 48px);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ============ Nav ============ */
+    .nav-wrap {
+      position: sticky;
+      top: env(safe-area-inset-top, 0px);
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      padding: 12px 0;
+    }
+    .nav {
+      display: flex;
+      padding: 4px;
+      background: var(--bg-nav);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+    .nav a {
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      transition: color .15s;
+    }
+    .nav a:hover { color: var(--text-nav-active); }
+    .nav a[aria-current="page"] {
+      color: var(--text-nav-active);
+      background: var(--bg-surface);
+      box-shadow: 0 1px 2px rgba(128, 135, 141, 0.1);
+    }
+
+    /* ============ Hero ============ */
+    .hero {
+      padding: 64px var(--text-inset) 0;
+      max-width: calc(480px + var(--text-inset) * 2);
+    }
+    .hero h1 {
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 22px;
+      line-height: 30px;
+      margin-bottom: 12px;
+    }
+    .hero p { color: var(--text-secondary); }
+    .br-desktop { display: none; }
+    .nowrap { white-space: nowrap; }
+    @media (min-width: 720px) {
+      .hero h1 { font-size: 28px; line-height: 32px; }
+      .hero p { font-size: 18px; line-height: 28px; }
+      .br-desktop { display: inline; }
+    }
+
+    .actions { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 44px;
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 24px;
+      border-radius: var(--radius-pill);
+      white-space: nowrap;
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      padding: 2px;
+      background: var(--btn-primary-outer);
+      color: #fff;
+    }
+    .btn-primary span {
+      display: flex;
+      align-items: center;
+      height: 40px;
+      padding: 0 20px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: linear-gradient(to bottom, var(--btn-primary-top), var(--btn-primary-bottom)) border-box;
+    }
+    @media (hover: hover) {
+      .btn-primary:hover span {
+        background: var(--btn-primary-bg-hover);
+        border-color: transparent;
+      }
+    }
+    .btn-primary:active span {
+      background: var(--btn-primary-bg-pressed);
+      border-color: transparent;
+    }
+    .btn-primary:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px var(--btn-primary-focus-ring);
+    }
+    .btn-secondary {
+      padding: 0 20px;
+      background: var(--btn-secondary-bg);
+      border: 1px solid var(--btn-secondary-border);
+      color: var(--text-primary);
+      transition: background-color .15s ease, border-color .15s ease, transform .15s ease;
+    }
+    @media (hover: hover) {
+      .btn-secondary:hover { background: var(--btn-secondary-bg-hover); }
+    }
+    .btn-secondary:active {
+      background: var(--btn-secondary-bg-pressed);
+      border-color: var(--btn-secondary-border-pressed);
+    }
+
+    /* ============ Grid ============ */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--grid-gap);
+      margin-top: var(--section-gap);
+    }
+    .stack { display: flex; flex-direction: column; gap: var(--grid-gap); }
+    .stack > .card { flex: 1; }
+
+    .card {
+      position: relative;
+      background: var(--bg-card);
+      border-radius: var(--radius-card);
+      overflow: hidden;
+    }
+
+    /* ---- Badge card ---- */
+    .badge-card { min-height: 215px; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; padding: 34px 8px 30px; }
+    .badge-wrap { position: relative; width: 368px; max-width: 100%; transform: translateY(2px); }
+    .badge {
+      position: relative;
+      display: flex;
+      width: 100%;
+      height: 155px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-badge);
+      overflow: hidden;
+    }
+    .badge-side {
+      position: relative;
+      flex: 0 0 30px;
+      min-width: 0;
+      background: #e3e5e8;
+    }
+    .badge-side span {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) rotate(-90deg);
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 18px;
+      color: #b2b8bd;
+      white-space: nowrap;
+    }
+    .badge-person {
+      flex: 0 1 154px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 0 8px;
+      text-align: center;
+    }
+    .avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #dfe2e6;
+    }
+    .avatar { position: relative; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    /* Alternate photos, cycled by the script while the badge is hovered */
+    .avatar .avatar-alt { position: absolute; inset: 0; visibility: hidden; }
+    .avatar .avatar-alt.is-shown { visibility: visible; }
+    .badge-name {
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+    .badge-role {
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 12px;
+      line-height: 16px;
+      color: var(--text-tertiary);
+      white-space: nowrap;
+    }
+    .badge-facts-col {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 18px 8px 0;
+    }
+    .badge-facts { list-style: none; width: max-content; max-width: 100%; }
+    .badge-facts li {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 0;
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 18px;
+      color: #999;
+      white-space: nowrap;
+    }
+    .badge-facts li + li { border-top: 1px solid var(--border-divider); }
+    .badge-facts svg { flex: 0 0 18px; }
+    .badge-hole {
+      position: absolute;
+      left: 50%;
+      top: 10px;
+      width: 16px;
+      height: 16px;
+      transform: translateX(-50%);
+      background: var(--bg-card);
+      border: solid #e6e6e6;
+      border-width: 0 0.667px 1.333px;
+      border-radius: 50%;
+    }
+    /* Lanyard: 24×136, its clip ends over the hole (≈21px below the badge top) */
+    .lanyard {
+      position: absolute;
+      left: 50%;
+      bottom: calc(100% - 20.6px);
+      width: 24px;
+      height: 135.6px;
+      transform: translateX(-50%);
+      z-index: 2;
+      pointer-events: none;
+    }
+    .lanyard img { width: 100%; height: 100%; object-fit: cover; }
+    /* Fallback strap while lanyard.png is missing */
+    .lanyard:not(:has(img)) {
+      background: linear-gradient(90deg, #1d1e22, #3a3b42 50%, #1d1e22);
+      border-radius: 0 0 4px 4px;
+    }
+
+    /* ---- Tools card ---- */
+    .tools-card { min-height: 188px; display: grid; place-items: center; padding: 16px; }
+    .tools-inner { position: relative; }
+    .tools {
+      display: flex;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 22px;
+      border: 1px solid #fff;
+      background: linear-gradient(to top, #f5f5f5, #f7f7f8);
+      list-style: none;
+    }
+    .tool {
+      position: relative;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      transition: transform .35s cubic-bezier(.33, 1, .68, 1);
+    }
+    @media (hover: hover) {
+      .tool:hover { transform: scale(1.2); z-index: 1; }
+    }
+    /* Grey placeholder only while the icon file is missing */
+    .tool:not(:has(img)) { background: #e3e5e8; }
+    /* The exported icons already include their tile, border and shadow */
+    .tool img { display: block; width: 42px; height: 42px; }
+    /* ChatGPT export is 44×44: 1px extra on the sides and 2px below for the shadow */
+    .tool--chatgpt img { position: absolute; left: -1px; top: 0; width: 44px; height: 44px; max-width: none; }
+
+    .tools-arrow {
+      position: absolute;
+      left: -34px;
+      top: 31px;
+      width: 28px;
+      height: 64px;
+      transform: rotate(10.73deg);
+      pointer-events: none;
+    }
+    .tools-note {
+      position: absolute;
+      left: -2px;
+      top: calc(100% + 13px);
+      font-family: var(--font-hand);
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--text-primary);
+      transform: rotate(-3deg);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    /* ---- Case cards ---- */
+    .case { display: flex; flex-direction: column; gap: 16px; }
+    .case-cover {
+      display: block;
+      aspect-ratio: 1 / 1;
+      border-radius: var(--radius-case);
+      background: var(--bg-card);
+    }
+    .case-cover img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .5s cubic-bezier(.2, .7, .2, 1);
+    }
+    .case-cover:hover img { transform: scale(1.03); }
+    .case-fallback {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 20px;
+      line-height: 28px;
+      color: var(--text-primary);
+      text-align: center;
+      padding: 24px;
+    }
+    .case-arrow {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      height: 46px;
+      padding: 10px;
+      border-radius: 999px;
+      color: var(--text-primary);
+      background: #f7fafc;
+      border: 1px solid rgba(17, 17, 17, 0.2);
+      box-shadow: 0 10px 16px rgba(0, 0, 0, 0);
+      transition: padding-left .3s cubic-bezier(.33, 1, .68, 1), box-shadow .3s ease-out;
+    }
+    .case-arrow svg { flex: 0 0 24px; }
+    /* "Explore" label: collapsed to 0 width, expands into a pill (grid 0fr → 1fr) */
+    .case-arrow-label {
+      display: grid;
+      grid-template-columns: 0fr;
+      opacity: 0;
+      transition: grid-template-columns .3s cubic-bezier(.33, 1, .68, 1), opacity .2s ease-out;
+    }
+    .case-arrow-label > span { overflow: hidden; min-width: 0; }
+    .case-arrow-label > span > span {
+      display: block;
+      margin-right: 4px;
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 24px;
+      white-space: nowrap;
+    }
+
+    .case-caption { padding: 0 12px; display: none; }
+    .case-caption h2 {
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 26px;
+      color: var(--text-title);
+    }
+    .case-caption p { color: var(--text-secondary); margin-top: 4px; }
+
+    /* Placeholder tiles (Design System, KYC) — shown on desktop only, as in Figma */
+    .placeholder .case-arrow { opacity: .3; }
+
+    /* ============ Hover focus effect (desktop) ============
+       Hovering a case's arrow button dims everything else in the grid and reveals its caption;
+       the effect stays on until the cursor leaves the tile */
+    .grid > * { transition: opacity .25s ease-out; }
+
+    @media (min-width: 720px) {
+      .case { position: relative; }
+      .case-caption {
+        display: block;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        z-index: 2;
+        padding: 16px 0 24px;
+        /* Masks the dimmed tile underneath: solid for the top quarter, then a long fade
+           that runs through the extra 24px below the text. Starts under the text, not in the 16px gap.
+           Uses the page colour instead of Figma's #fff so the top edge doesn't show */
+        background: linear-gradient(to bottom, var(--bg-page) 25%, rgba(249, 250, 251, 0)) no-repeat;
+        background-position: 0 16px;
+        background-size: 100% calc(100% - 16px);
+        opacity: 0;
+        transform: translateY(-6px);
+        pointer-events: none;
+        transition: opacity .2s ease-out, transform .2s ease-out;
+      }
+    }
+
+    /* .is-spotlight / .is-active are toggled by the script at the end of the page */
+    @media (min-width: 720px) and (hover: hover) {
+      .grid.is-spotlight > :not(.is-active) { opacity: .15; }
+      .case.is-active .case-caption { opacity: 1; transform: none; }
+      /* Explore pill: only while the cursor is over the button itself */
+      .case-arrow:hover { padding-left: 16px; box-shadow: 0 10px 16px rgba(0, 0, 0, 0.25); }
+      .case-arrow:hover .case-arrow-label { grid-template-columns: 1fr; opacity: 1; }
+    }
+    /* Same effect for keyboard users */
+    @media (min-width: 720px) {
+      .grid:has(a.case-cover:focus-visible) > :not(:has(a.case-cover:focus-visible)) { opacity: .15; }
+      .case:has(a.case-cover:focus-visible) .case-caption { opacity: 1; transform: none; }
+      .case-cover:focus-visible .case-arrow { padding-left: 16px; box-shadow: 0 10px 16px rgba(0, 0, 0, 0.25); }
+      .case-cover:focus-visible .case-arrow-label { grid-template-columns: 1fr; opacity: 1; }
+    }
+
+    /* ============ Contacts ============ */
+    .contacts { margin: var(--section-gap) 0 96px; padding: 0 var(--text-inset); }
+    .contacts h2 {
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 22px;
+      line-height: 30px;
+      margin-bottom: 20px;
+    }
+    .contacts a { color: var(--text-secondary); transition: color .15s; }
+    .contacts a:hover { color: var(--text-primary); }
+    .links { display: flex; flex-wrap: wrap; gap: 8px 20px; margin-top: 12px; }
+    /* extra room on desktop for the hover caption of the last row */
+    @media (min-width: 720px) { .contacts { margin-top: 128px; } }
+
+    /* ============ Mobile (Figma: 375) ============ */
+    @media (max-width: 719px) {
+      :root {
+        --radius-case: 26px;
+        --section-gap: 60px;
+        --text-inset: 12px;
+      }
+      .container { padding: 0 4px; }
+      .nav-wrap { padding: 12px 0 8px; }
+      .hero { padding-top: 36px; }
+      .grid { grid-template-columns: 1fr; }
+      .stack { display: contents; }
+      .case-caption { display: block; }
+      .placeholder { display: none; }
+      .contacts { margin-bottom: 64px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="nav-wrap">
+    <nav class="nav" aria-label="Main">
+      <a href="/" aria-current="page">Home</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+
+  <main class="container">
+
+    <!-- ===== Hero ===== -->
+    <section class="hero">
+      <h1>Artem Shevliakov</h1>
+      <p>Product designer with 5+ years of experience in fintech, B2B and mobile. I take products from research and hypotheses<br class="br-desktop" aria-hidden="true"> to tested, <span class="nowrap">ready-to-build</span> interfaces.</p>
+
+      <div class="actions">
+        <a class="btn btn-primary" href="mailto:designartems@gmail.com"><span>Email Me</span></a>
+        <a class="btn btn-secondary" href="assets/cv.pdf" download="Artem-Shevliakov-Product-Designer-CV.pdf">Download CV</a>
+      </div>
+    </section>
+
+    <!-- ===== Cards grid ===== -->
+    <section class="grid" aria-label="Work">
+
+      <div class="stack">
+        <!-- Badge -->
+        <div class="card badge-card">
+          <div class="badge-wrap">
+            <div class="badge">
+              <div class="badge-side"><span>Design Department</span></div>
+              <div class="badge-person">
+                <div class="avatar">
+                  <img src="assets/avatar.webp" alt="Artem Shevliakov" onerror="this.remove()">
+                  <img class="avatar-alt" src="assets/avatar-2.webp" alt="" aria-hidden="true" onerror="this.remove()">
+                  <img class="avatar-alt" src="assets/avatar-3.webp" alt="" aria-hidden="true" onerror="this.remove()">
+                  <img class="avatar-alt" src="assets/avatar-4.webp" alt="" aria-hidden="true" onerror="this.remove()">
+                  <img class="avatar-alt" src="assets/avatar-5.webp" alt="" aria-hidden="true" onerror="this.remove()">
+                </div>
+                <div>
+                  <p class="badge-name">Artem Shevliakov</p>
+                  <p class="badge-role">Product Designer</p>
+                </div>
+              </div>
+              <div class="badge-facts-col">
+                <ul class="badge-facts">
+                  <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7.5 4.5c.45 2.7 1.8 4.05 4.5 4.5-2.7.45-4.05 1.8-4.5 4.5C7.05 10.8 5.7 9.45 3 9c2.7-.45 4.05-1.8 4.5-4.5Z" stroke="#999" stroke-width="1.3" stroke-linejoin="round"/><path d="M13.25 2.25c.2.95.55 1.3 1.5 1.5-.95.2-1.3.55-1.5 1.5-.2-.95-.55-1.3-1.5-1.5.95-.2 1.3-.55 1.5-1.5Z" stroke="#999" stroke-width="1.1" stroke-linejoin="round"/></svg>AI Fluent</li>
+                  <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="2.25" y="5.25" width="13.5" height="9.75" rx="2" stroke="#999" stroke-width="1.3"/><path d="M6.5 5.25V4a1.25 1.25 0 0 1 1.25-1.25h2.5A1.25 1.25 0 0 1 11.5 4v1.25M2.25 9.25h13.5" stroke="#999" stroke-width="1.3"/></svg>B2B · B2C · SaaS</li>
+                  <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 15.75s5.25-4.1 5.25-8.25a5.25 5.25 0 0 0-10.5 0c0 4.15 5.25 8.25 5.25 8.25Z" stroke="#999" stroke-width="1.3" stroke-linejoin="round"/><circle cx="9" cy="7.5" r="1.9" stroke="#999" stroke-width="1.3"/></svg>Based in Prague</li>
+                </ul>
+              </div>
+              <div class="badge-hole" aria-hidden="true"></div>
+            </div>
+            <div class="lanyard" aria-hidden="true">
+              <img src="assets/lanyard.png" alt="" onerror="this.remove()">
+            </div>
+          </div>
+        </div>
+
+        <!-- Tools -->
+        <div class="card tools-card">
+          <div class="tools-inner">
+            <ul class="tools" aria-label="Tools I use daily">
+              <li class="tool"><img src="assets/tools/figma.svg" alt="Figma" onerror="this.remove()"></li>
+              <li class="tool"><img src="assets/tools/photoshop.svg" alt="Photoshop" onerror="this.remove()"></li>
+              <li class="tool"><img src="assets/tools/claude.svg" alt="Claude" onerror="this.remove()"></li>
+              <li class="tool tool--chatgpt"><img src="assets/tools/chatgpt.svg" alt="ChatGPT" onerror="this.remove()"></li>
+              <li class="tool"><img src="assets/tools/obsidian.svg" alt="Obsidian" onerror="this.remove()"></li>
+            </ul>
+            <svg class="tools-arrow" viewBox="0 0 28 64" fill="none" aria-hidden="true">
+              <path d="M24 61C10 56 3 45 4 31 5 19 11 10 20 4" stroke="#131415" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M12 6.5 20 4 20.5 12" stroke="#131415" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p class="tools-note" aria-hidden="true">Tools I use daily</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Design System (placeholder, desktop only) -->
+      <div class="case placeholder">
+        <div class="card case-cover">
+          <div class="case-fallback">Design System</div>
+          <img src="assets/cases/design-system.webp" alt="Design system: Figma variable collections and component library" onerror="this.parentElement.classList.add('no-image'); this.remove()">
+        </div>
+      </div>
+
+      <!-- ===== Cases ===== -->
+      <!-- TODO: href → страница кейса на сайте (пока Behance) -->
+      <article class="case">
+        <a class="card case-cover" href="https://www.behance.net/gallery/254364713/Neura-AI-Powered-Health-Companion-Mobile-App" target="_blank" rel="noopener" aria-label="Neura case study on Behance (opens in a new tab)">
+          <div class="case-fallback">Neura</div>
+          <img src="assets/cases/neura.webp" alt="" onerror="this.parentElement.classList.add('no-image'); this.remove()">
+          <span class="case-arrow" aria-hidden="true"><span class="case-arrow-label"><span><span>Explore</span></span></span><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </a>
+        <div class="case-caption">
+          <h2>Neura — AI-Powered Health Companion</h2>
+          <p>Neura is an AI health app that unifies your data from 50+ sources into personal guidance.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <a class="card case-cover" href="https://www.behance.net/gallery/255063711/Gaitor-AI-Orchestration-Platform" target="_blank" rel="noopener" aria-label="Gaitor case study on Behance (opens in a new tab)">
+          <div class="case-fallback">Gaitor</div>
+          <img src="assets/cases/gaitor.webp" alt="" onerror="this.parentElement.classList.add('no-image'); this.remove()">
+          <span class="case-arrow" aria-hidden="true"><span class="case-arrow-label"><span><span>Explore</span></span></span><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </a>
+        <div class="case-caption">
+          <h2>Gaitor — AI Orchestration Platform</h2>
+          <p>Gaitor is a platform for orchestrating leading AI models, with built-in verification and full transparency.</p>
+        </div>
+      </article>
+
+      <article class="case">
+        <a class="card case-cover" href="https://www.behance.net/gallery/254485187/Nomey-Creator-Monetization-Platform" target="_blank" rel="noopener" aria-label="Nomey case study on Behance (opens in a new tab)">
+          <div class="case-fallback">Nomey</div>
+          <img src="assets/cases/nomey.webp" alt="" onerror="this.parentElement.classList.add('no-image'); this.remove()">
+          <span class="case-arrow" aria-hidden="true"><span class="case-arrow-label"><span><span>Explore</span></span></span><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </a>
+        <div class="case-caption">
+          <h2>Nomey — Creator Monetization Platform</h2>
+          <p>A simpler way for creators to monetize their exclusive content.</p>
+        </div>
+      </article>
+
+      <!-- Flonk KYC & KYB — case in progress (placeholder, desktop only) -->
+      <article class="case placeholder">
+        <div class="card case-cover">
+          <div class="case-fallback">Flonk — KYC &amp; KYB</div>
+          <img src="assets/cases/flonk.webp" alt="Flonk — KYC &amp; KYB, case in progress" onerror="this.parentElement.classList.add('no-image'); this.remove()">
+        </div>
+      </article>
+
+
+
+    </section>
+
+    <!-- ===== Contacts ===== -->
+    <section class="contacts">
+      <h2>Contact &amp; Links</h2>
+      <a href="mailto:designartems@gmail.com">designartems@gmail.com</a>
+      <div class="links">
+        <a href="https://www.linkedin.com/in/artem-shevliakov/" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://www.behance.net/art_sh" target="_blank" rel="noopener">Behance</a>
+        <a href="https://dribbble.com/ArtShevDesign" target="_blank" rel="noopener">Dribbble</a>
+        <a href="https://www.upwork.com/freelancers/~01ff2b9b731c40380a" target="_blank" rel="noopener">Upwork</a>
+      </div>
+    </section>
+
+  </main>
+<script>
+  // Spotlight: turns on when the cursor reaches the arrow button, turns off when it leaves the tile
+  (function () {
+    var mq = window.matchMedia('(hover: hover) and (min-width: 720px)');
+    var grid = document.querySelector('.grid');
+    if (!grid) return;
+    function clear() {
+      grid.classList.remove('is-spotlight');
+      grid.querySelectorAll('.case.is-active').forEach(function (c) { c.classList.remove('is-active'); });
+    }
+    grid.querySelectorAll('a.case-cover').forEach(function (tile) {
+      var arrow = tile.querySelector('.case-arrow');
+      var item = tile.closest('.case');
+      if (!arrow || !item) return;
+      arrow.addEventListener('pointerenter', function () {
+        if (!mq.matches) return;
+        clear();
+        item.classList.add('is-active');
+        grid.classList.add('is-spotlight');
+      });
+      tile.addEventListener('pointerleave', function () {
+        if (item.classList.contains('is-active')) clear();
+      });
+    });
+    mq.addEventListener('change', function (e) { if (!e.matches) clear(); });
+  })();
+</script>
+<script>
+  // Badge: while hovered, cycle through all avatars every 0.5s (loops); back to the main photo on leave
+  (function () {
+    var mq = window.matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)');
+    var badge = document.querySelector('.badge-wrap');
+    if (!badge) return;
+    var alts = Array.prototype.slice.call(badge.querySelectorAll('.avatar-alt'));
+    if (!alts.length) return;
+    var timer = null, i = -1;
+    function show(n) {
+      alts.forEach(function (img, k) { img.classList.toggle('is-shown', k === n); });
+    }
+    // Cycle includes the original photo: alt 1 → … → alt N → original → alt 1 …
+    function step() { i = (i + 1) % (alts.length + 1); show(i === alts.length ? -1 : i); }
+    badge.addEventListener('pointerenter', function () {
+      if (!mq.matches || timer) return;
+      step();
+      timer = setInterval(step, 500);
+    });
+    badge.addEventListener('pointerleave', function () {
+      clearInterval(timer); timer = null; i = -1; show(-1);
+    });
+  })();
+</script>
+</body>
+</html>
