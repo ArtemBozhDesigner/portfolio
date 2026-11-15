@@ -83,6 +83,18 @@
       padding: 0 24px;
     }
 
+    /* ============ Logo ============
+       Sits at the top of the page and scrolls away; only the nav pill is sticky */
+    .logo {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 11px);
+      left: clamp(12px, 5.7vw, 80px);
+      z-index: 11;
+      display: block;
+      width: 42px;
+      height: 32px;
+    }
+
     /* ============ Nav ============ */
     .nav-wrap {
       position: sticky;
@@ -547,10 +559,13 @@
 </head>
 <body>
 
+  <a class="logo" href="/" aria-label="Artem Shevliakov, home"><img src="assets/logo.svg" width="42" height="32" alt=""></a>
+
   <header class="nav-wrap">
     <nav class="nav" aria-label="Main">
       <a href="/" aria-current="page">Home</a>
       <a href="/about">About</a>
+      <a href="/writing">Writing</a>
     </nav>
   </header>
 
