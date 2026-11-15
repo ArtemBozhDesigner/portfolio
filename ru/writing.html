@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title data-i18n="meta.writing.title">Заметки — Артём Шевляков</title>
+  <meta name="description" content="Заметки о продуктовом дизайне: гайды и рабочие черновики о том, как я подхожу к дизайн-задачам." data-i18n-attrs="content:meta.writing.description">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/lang-switcher.css">
+
+  <style>
+    /* ============ Tokens (from Figma) ============ */
+    :root {
+      color-scheme: light;
+
+      /* Color */
+      --bg-page: #fafafa;
+      --bg-surface: #ffffff;
+      --bg-nav: #f8f8f9;
+      --bg-cover: #f4f4f6;
+      --border-subtle: #ebebec;
+      --text-primary: #131415;
+      --text-strong: #141516;
+      --text-body: #36383a;
+      --text-secondary: #5c5c5c;
+      --text-muted: #6d7378;
+      --text-meta: #74777a;
+      --text-nav-active: #242628;
+      --accent: #4379d3;
+      --bg-chip: #ebebec;
+
+      /* Type */
+      --font-heading: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-body: "Inter Tight", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+      /* Radius */
+      --radius-cover: 24px;
+      --radius-pill: 999px;
+
+      /* Layout: this page uses the narrower 820px column from the Writing frame */
+      --container: 820px;
+      --section-gap: 64px;
+      --text-inset: 0px;
+
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+    *, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 24px;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    :focus-visible { outline: 2px solid var(--text-primary); outline-offset: 3px; }
+
+    .container {
+      width: 100%;
+      max-width: calc(var(--container) + 48px);
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ============ Logo ============
+       Sits at the top of the page and scrolls away; only the nav pill is sticky */
+    .logo {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 15px);
+      left: clamp(12px, 5.7vw, 80px);
+      z-index: 11;
+      display: block;
+      width: 42px;
+      height: 32px;
+    }
+
+    /* ============ Nav ============ */
+    .nav-wrap {
+      position: sticky;
+      top: env(safe-area-inset-top, 0px);
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      padding: 12px 0;
+    }
+    .nav {
+      display: flex;
+      padding: 4px;
+      background: var(--bg-nav);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      -webkit-backdrop-filter: blur(20px);
+      backdrop-filter: blur(20px);
+    }
+    .nav a {
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      transition: color .15s;
+    }
+    .nav a:hover { color: var(--text-nav-active); }
+    .nav a[aria-current="page"] {
+      color: var(--text-nav-active);
+      background: var(--bg-surface);
+      box-shadow: 0 1px 1px rgba(128, 135, 141, 0.1);
+    }
+
+    /* ============ Page intro ============ */
+    main { padding-bottom: 96px; }
+    .intro { padding: 68px var(--text-inset) 0; }
+    .intro h1 {
+      font-family: var(--font-body);
+      font-weight: 500;
+      font-size: 32px;
+      line-height: 48px;
+      letter-spacing: 0.32px;
+      color: var(--text-strong);
+      margin-bottom: 12px;
+    }
+    .intro p {
+      letter-spacing: 0.16px;
+      color: var(--text-body);
+    }
+
+    /* ============ Filters ============ */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 40px;
+      padding: 0 var(--text-inset);
+    }
+    .chip {
+      font-family: var(--font-heading);
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-nav-active);
+      padding: 4px 10px;
+      border: 0;
+      border-radius: var(--radius-pill);
+      background: none;
+      cursor: pointer;
+    }
+    .chip[aria-pressed="true"] { background: var(--bg-chip); color: var(--text-strong); }
+    .chip span { color: var(--text-meta); }
+
+    /* ============ Notes: two-column grid, 400px cards ============ */
+    .notes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 32px 20px;
+      margin-top: 20px;
+      list-style: none;
+    }
+    .note { display: flex; flex-direction: column; gap: 16px; }
+    .note-cover {
+      position: relative;
+      aspect-ratio: 400 / 256;
+      border-radius: var(--radius-cover);
+      background: var(--bg-cover);
+      overflow: hidden;
+      container-type: inline-size;
+    }
+    .note-text { display: flex; flex-direction: column; gap: 6px; padding: 0 var(--text-inset); }
+    .note-title {
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 28px;
+      letter-spacing: 0.18px;
+      color: var(--text-strong);
+    }
+    .note-meta { letter-spacing: 0.16px; color: var(--text-meta); }
+
+    /* ---- Cover art: the pinned "Catalog" card ----
+       Drawn at Figma size 400×256. --u is one Figma px at any cover width,
+       so every length below is the Figma value times --u */
+    .art { position: absolute; inset: 0; --u: calc(100cqw / 400); }
+    .art-back,
+    .art-front {
+      position: absolute;
+      width: calc(var(--u) * 220);
+      height: calc(var(--u) * 163);
+      border-radius: calc(var(--u) * 17);
+      background: #fcfcfc;
+    }
+    .art-back {
+      left: calc(var(--u) * 90.14);
+      top: calc(var(--u) * 46.09);
+      transform: rotate(5deg);
+      box-shadow: 0 calc(var(--u) * 10) calc(var(--u) * 12) calc(var(--u) * -8) rgba(157, 163, 169, 0.12), 0 calc(var(--u) * 28) calc(var(--u) * 80) calc(var(--u) * -10) rgba(134, 143, 151, 0.1);
+    }
+    .art-front {
+      left: calc(var(--u) * 89.76);
+      top: calc(var(--u) * 47);
+      overflow: hidden;
+      transform: rotate(-2deg);
+      box-shadow: 0 calc(var(--u) * -10) calc(var(--u) * 20) calc(var(--u) * -8) rgba(157, 163, 169, 0.06), 0 calc(var(--u) * 10) calc(var(--u) * 12) calc(var(--u) * -8) rgba(157, 163, 169, 0.16), 0 calc(var(--u) * 28) calc(var(--u) * 80) calc(var(--u) * -10) rgba(134, 143, 151, 0.12);
+    }
+    .art-label {
+      position: absolute;
+      left: calc(var(--u) * 17.61);
+      top: calc(var(--u) * 16.74);
+      display: flex;
+      gap: calc(var(--u) * 3);
+      font-family: var(--font-heading);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .art-label span { font-size: calc(var(--u) * 14); line-height: 1.4286; letter-spacing: calc(var(--u) * -0.14); color: var(--text-body); }
+    .art-label span + span { color: #8f9194; }
+    .art-tile { position: absolute; overflow: hidden; background: #f5f5f5; border-radius: calc(var(--u) * 4.4); }
+    .art-tile i { position: absolute; display: block; border-radius: calc(var(--u) * 2); background: #ebebec; }
+    .art-tile--grid { left: calc(var(--u) * 6.6); right: calc(var(--u) * 112.2); top: calc(var(--u) * 46.7); height: calc(var(--u) * 110); border-bottom-left-radius: calc(var(--u) * 11); }
+    .art-tile--list { right: calc(var(--u) * 6.6); top: calc(var(--u) * 46.7); width: calc(var(--u) * 101.2); height: calc(var(--u) * 52.8); }
+    .art-tile--pick {
+      right: calc(var(--u) * 6.6);
+      top: calc(var(--u) * 103.9);
+      width: calc(var(--u) * 101.2);
+      height: calc(var(--u) * 52.8);
+      background: #fff;
+      box-shadow: inset 0 0 0 calc(var(--u) * 1) var(--accent);
+      border-bottom-right-radius: calc(var(--u) * 11);
+    }
+    .art-tile--pick .is-accent { background: var(--accent); }
+    .art-check {
+      position: absolute;
+      left: calc(var(--u) * 199.24);
+      top: calc(var(--u) * 97);
+      display: flex;
+      padding: calc(var(--u) * 2);
+      border: calc(var(--u) * 1.5) solid #fff;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+    .art-check img { width: calc(var(--u) * 10); height: calc(var(--u) * 10); max-width: none; }
+    .art-pin { position: absolute; left: calc(var(--u) * 190); top: calc(var(--u) * 36.5); width: calc(var(--u) * 20.571); height: calc(var(--u) * 24); max-width: none; }
+
+    /* ============ Mobile ============ */
+    @media (max-width: 719px) {
+      :root { --text-inset: 12px; }
+      .container { padding: 0 4px; }
+      .nav-wrap { padding: 12px 0 8px; }
+      .intro { padding-top: 36px; }
+      .intro h1 { font-size: 26px; line-height: 34px; letter-spacing: 0.26px; }
+      .filters { margin-top: 32px; }
+      .notes { grid-template-columns: minmax(0, 1fr); }
+      main { padding-bottom: 64px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <a class="logo" href="/ru" aria-label="Артём Шевляков, главная" data-i18n-attrs="aria-label:logo.label"><img src="/assets/logo.svg" width="42" height="32" alt=""></a>
+
+  <header class="nav-wrap">
+    <nav class="nav" aria-label="Основная навигация" data-i18n-attrs="aria-label:nav.label">
+      <a href="/ru" data-i18n="nav.home">Главная</a>
+      <a href="/ru/about" data-i18n="nav.about">Обо мне</a>
+      <a href="/ru/writing" aria-current="page" data-i18n="nav.writing">Заметки</a>
+    </nav>
+  </header>
+
+  <!-- lang-switcher:start -->
+  <div class="lang" data-lang>
+    <button class="lang-button" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="Язык: Русский">
+      <span class="lang-globe" aria-hidden="true"></span>
+      <span class="lang-code" aria-hidden="true">RU</span>
+    </button>
+    <div class="lang-menu" id="lang-menu" hidden>
+      <a class="lang-item" href="/writing" hreflang="en" lang="en">English</a>
+      <a class="lang-item" href="/de/writing" hreflang="de" lang="de">Deutsch</a>
+      <a class="lang-item" href="/cs/writing" hreflang="cs" lang="cs">Čeština</a>
+      <a class="lang-item" href="/ru/writing" hreflang="ru" lang="ru" aria-current="true">Русский</a>
+    </div>
+  </div>
+  <!-- lang-switcher:end -->
+
+  <main class="container">
+
+    <!-- ===== Intro ===== -->
+    <section class="intro">
+      <h1 data-i18n="writing.title">Заметки</h1>
+      <p data-i18n="writing.intro">Гайды и заметки из моего дизайн-процесса для дизайнеров, которым нужен метод, применимый в новых задачах.</p>
+    </section>
+
+    <!-- ===== Notes ===== -->
+    <div class="filters" role="group" aria-label="Фильтр заметок" data-i18n-attrs="aria-label:writing.filter.label">
+      <button class="chip" type="button" aria-pressed="true" data-i18n="writing.all">Все <span>1</span></button>
+      <button class="chip" type="button" aria-pressed="false">Label</button>
+      <button class="chip" type="button" aria-pressed="false">Label</button>
+    </div>
+
+    <ul class="notes" aria-label="Заметки" data-i18n-attrs="aria-label:writing.list.label">
+
+      <!-- TODO: href → the article page, not built yet -->
+      <li>
+        <a class="note" href="/ru/writing/references-and-benchmarks">
+          <div class="note-cover" aria-hidden="true">
+            <div class="art">
+              <div class="art-back"></div>
+              <div class="art-front">
+                <div class="art-label"><span>Catalog</span><span>5</span></div>
+
+                <div class="art-tile art-tile--grid">
+                  <i style="right: calc(var(--u) * 5.56); top: calc(var(--u) * 6.3); width: calc(var(--u) * 28); height: calc(var(--u) * 31)"></i>
+                  <i style="right: calc(var(--u) * 5.56); top: calc(var(--u) * 40.3); width: calc(var(--u) * 28); height: calc(var(--u) * 31)"></i>
+                  <i style="right: calc(var(--u) * 5.56); top: calc(var(--u) * 74.3); width: calc(var(--u) * 28); height: calc(var(--u) * 31)"></i>
+                  <i style="right: calc(var(--u) * 35.56); top: calc(var(--u) * 6.3); width: calc(var(--u) * 28); height: calc(var(--u) * 31)"></i>
+                  <i style="right: calc(var(--u) * 35.56); top: calc(var(--u) * 40.3); width: calc(var(--u) * 28); height: calc(var(--u) * 31)"></i>
+                  <i style="right: calc(var(--u) * 35.56); top: calc(var(--u) * 74.3); width: calc(var(--u) * 28); height: calc(var(--u) * 31)"></i>
+                  <i style="right: calc(var(--u) * 70.56); top: calc(var(--u) * 6.3); width: calc(var(--u) * 24); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 76.56); top: calc(var(--u) * 13.3); width: calc(var(--u) * 18); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 70.56); top: calc(var(--u) * 20.3); width: calc(var(--u) * 24); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 76.56); top: calc(var(--u) * 27.3); width: calc(var(--u) * 18); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 70.56); top: calc(var(--u) * 34.3); width: calc(var(--u) * 24); height: calc(var(--u) * 4)"></i>
+                </div>
+
+                <div class="art-tile art-tile--list">
+                  <i style="right: calc(var(--u) * 83.16); top: calc(var(--u) * 6.3); width: calc(var(--u) * 12); height: calc(var(--u) * 12)"></i>
+                  <i style="right: calc(var(--u) * 83.16); top: calc(var(--u) * 21.3); width: calc(var(--u) * 12); height: calc(var(--u) * 12)"></i>
+                  <i style="right: calc(var(--u) * 83.16); top: calc(var(--u) * 36.3); width: calc(var(--u) * 12); height: calc(var(--u) * 12)"></i>
+                  <i style="right: calc(var(--u) * 30.16); top: calc(var(--u) * 10.3); width: calc(var(--u) * 49); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 30.16); top: calc(var(--u) * 25.3); width: calc(var(--u) * 49); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 30.16); top: calc(var(--u) * 40.3); width: calc(var(--u) * 49); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 6.16); top: calc(var(--u) * 10.3); width: calc(var(--u) * 20); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 6.16); top: calc(var(--u) * 25.3); width: calc(var(--u) * 20); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 6.16); top: calc(var(--u) * 40.3); width: calc(var(--u) * 20); height: calc(var(--u) * 4)"></i>
+                </div>
+
+                <div class="art-tile art-tile--pick">
+                  <i class="is-accent" style="right: calc(var(--u) * 73.16); top: calc(var(--u) * 8.1); width: calc(var(--u) * 22); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 54.16); top: calc(var(--u) * 8.1); width: calc(var(--u) * 16); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 33.16); top: calc(var(--u) * 8.1); width: calc(var(--u) * 18); height: calc(var(--u) * 4)"></i>
+                  <i style="right: calc(var(--u) * 67.16); top: calc(var(--u) * 16.1); width: calc(var(--u) * 28); height: calc(var(--u) * 31)"></i>
+                  <i style="right: calc(var(--u) * 36.16); top: calc(var(--u) * 16.1); width: calc(var(--u) * 28); height: calc(var(--u) * 31)"></i>
+                  <i style="right: calc(var(--u) * 5.16); top: calc(var(--u) * 16.1); width: calc(var(--u) * 28); height: calc(var(--u) * 31); border-bottom-right-radius: calc(var(--u) * 6)"></i>
+                </div>
+
+                <div class="art-check"><img src="/assets/writing/check.svg" width="11" height="11" alt=""></div>
+              </div>
+              <img class="art-pin" src="/assets/writing/pin.png" width="62" height="72" alt="">
+            </div>
+          </div>
+          <div class="note-text">
+            <h2 class="note-title" data-i18n="writing.note1.title">Как искать референсы и бенчмарки</h2>
+            <p class="note-meta" data-i18n="writing.note1.meta">8 мин</p>
+          </div>
+        </a>
+      </li>
+
+      <li>
+        <div class="note">
+          <div class="note-cover"></div>
+          <div class="note-text">
+            <h2 class="note-title">Placeholder</h2>
+            <p class="note-meta" data-i18n="writing.placeholder.meta">? мин</p>
+          </div>
+        </div>
+      </li>
+
+      <li>
+        <div class="note">
+          <div class="note-cover"></div>
+          <div class="note-text">
+            <h2 class="note-title" data-i18n="writing.note1.title">Как искать референсы и бенчмарки</h2>
+            <p class="note-meta" data-i18n="writing.placeholder.meta">? мин</p>
+          </div>
+        </div>
+      </li>
+
+      <li>
+        <div class="note">
+          <div class="note-cover"></div>
+          <div class="note-text">
+            <h2 class="note-title" data-i18n="writing.note1.title">Как искать референсы и бенчмарки</h2>
+            <p class="note-meta" data-i18n="writing.placeholder.meta">? мин</p>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+
+  </main>
+<script src="/assets/lang-switcher.js" defer></script>
+</body>
+</html>

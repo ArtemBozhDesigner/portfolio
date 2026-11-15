@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>About — Artem Shevliakov, Product Designer</title>
-  <meta name="description" content="Artem Shevliakov — product designer with 5+ years of experience in fintech, B2B, B2C and SaaS. Experience, education and contacts.">
+  <title data-i18n="meta.about.title">About — Artem Shevliakov, Product Designer</title>
+  <meta name="description" content="Artem Shevliakov — product designer with 5+ years of experience in fintech, B2B, B2C and SaaS. Experience, education and contacts." data-i18n-attrs="content:meta.about.description">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/lang-switcher.css">
 
   <style>
     /* ============ Tokens (shared with index.html) ============ */
@@ -69,7 +71,7 @@
        Sits at the top of the page and scrolls away; only the nav pill is sticky */
     .logo {
       position: absolute;
-      top: calc(env(safe-area-inset-top, 0px) + 11px);
+      top: calc(env(safe-area-inset-top, 0px) + 15px);
       left: clamp(12px, 5.7vw, 80px);
       z-index: 11;
       display: block;
@@ -361,15 +363,30 @@
 </head>
 <body>
 
-  <a class="logo" href="/" aria-label="Artem Shevliakov, home"><img src="assets/logo.svg" width="42" height="32" alt=""></a>
+  <a class="logo" href="/" aria-label="Artem Shevliakov, home" data-i18n-attrs="aria-label:logo.label"><img src="/assets/logo.svg" width="42" height="32" alt=""></a>
 
   <header class="nav-wrap">
-    <nav class="nav" aria-label="Main">
-      <a href="/">Home</a>
-      <a href="/about" aria-current="page">About</a>
-      <a href="/writing">Writing</a>
+    <nav class="nav" aria-label="Main" data-i18n-attrs="aria-label:nav.label">
+      <a href="/" data-i18n="nav.home">Home</a>
+      <a href="/about" aria-current="page" data-i18n="nav.about">About</a>
+      <a href="/writing" data-i18n="nav.writing">Writing</a>
     </nav>
   </header>
+
+  <!-- lang-switcher:start -->
+  <div class="lang" data-lang>
+    <button class="lang-button" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="Language: English">
+      <span class="lang-globe" aria-hidden="true"></span>
+      <span class="lang-code" aria-hidden="true">EN</span>
+    </button>
+    <div class="lang-menu" id="lang-menu" hidden>
+      <a class="lang-item" href="/about" hreflang="en" lang="en" aria-current="true">English</a>
+      <a class="lang-item" href="/de/about" hreflang="de" lang="de">Deutsch</a>
+      <a class="lang-item" href="/cs/about" hreflang="cs" lang="cs">Čeština</a>
+      <a class="lang-item" href="/ru/about" hreflang="ru" lang="ru">Русский</a>
+    </div>
+  </div>
+  <!-- lang-switcher:end -->
 
   <main class="container">
 
@@ -377,29 +394,29 @@
     <div class="badge-block">
       <div class="badge-wrap">
         <div class="badge">
-          <div class="badge-side"><span>Design Department</span></div>
+          <div class="badge-side"><span data-i18n="badge.department">Design Department</span></div>
           <div class="badge-person">
             <div class="avatar">
-              <img src="assets/avatar.webp" alt="Artem Shevliakov" onerror="this.remove()">
-              <img class="avatar-alt" src="assets/avatar-2.webp" alt="" aria-hidden="true" onerror="this.remove()">
-              <img class="avatar-alt" src="assets/avatar-3.webp" alt="" aria-hidden="true" onerror="this.remove()">
-              <img class="avatar-alt" src="assets/avatar-4.webp" alt="" aria-hidden="true" onerror="this.remove()">
-              <img class="avatar-alt" src="assets/avatar-5.webp" alt="" aria-hidden="true" onerror="this.remove()">
+              <img src="/assets/avatar.webp" alt="Artem Shevliakov" data-i18n-attrs="alt:name" onerror="this.remove()">
+              <img class="avatar-alt" src="/assets/avatar-2.webp" alt="" aria-hidden="true" onerror="this.remove()">
+              <img class="avatar-alt" src="/assets/avatar-3.webp" alt="" aria-hidden="true" onerror="this.remove()">
+              <img class="avatar-alt" src="/assets/avatar-4.webp" alt="" aria-hidden="true" onerror="this.remove()">
+              <img class="avatar-alt" src="/assets/avatar-5.webp" alt="" aria-hidden="true" onerror="this.remove()">
             </div>
             <div>
-              <h1 class="badge-name">Artem Shevliakov</h1>
-              <p class="badge-role">Product Designer</p>
+              <h1 class="badge-name" data-i18n="name">Artem Shevliakov</h1>
+              <p class="badge-role" data-i18n="badge.role">Product Designer</p>
             </div>
           </div>
           <ul class="badge-facts">
-            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7.5 4.5c.45 2.7 1.8 4.05 4.5 4.5-2.7.45-4.05 1.8-4.5 4.5C7.05 10.8 5.7 9.45 3 9c2.7-.45 4.05-1.8 4.5-4.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M13.25 2.25c.2.95.55 1.3 1.5 1.5-.95.2-1.3.55-1.5 1.5-.2-.95-.55-1.3-1.5-1.5.95-.2 1.3-.55 1.5-1.5Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>AI Fluent</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M7.5 4.5c.45 2.7 1.8 4.05 4.5 4.5-2.7.45-4.05 1.8-4.5 4.5C7.05 10.8 5.7 9.45 3 9c2.7-.45 4.05-1.8 4.5-4.5Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M13.25 2.25c.2.95.55 1.3 1.5 1.5-.95.2-1.3.55-1.5 1.5-.2-.95-.55-1.3-1.5-1.5.95-.2 1.3-.55 1.5-1.5Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg><span data-i18n="badge.ai">AI Fluent</span></li>
             <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><rect x="2.25" y="5.25" width="13.5" height="9.75" rx="2" stroke="currentColor" stroke-width="1.3"/><path d="M6.5 5.25V4a1.25 1.25 0 0 1 1.25-1.25h2.5A1.25 1.25 0 0 1 11.5 4v1.25M2.25 9.25h13.5" stroke="currentColor" stroke-width="1.3"/></svg>B2B · B2C · SaaS</li>
-            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 15.75s5.25-4.1 5.25-8.25a5.25 5.25 0 0 0-10.5 0c0 4.15 5.25 8.25 5.25 8.25Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="9" cy="7.5" r="1.9" stroke="currentColor" stroke-width="1.3"/></svg>Based in Prague</li>
+            <li><svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M9 15.75s5.25-4.1 5.25-8.25a5.25 5.25 0 0 0-10.5 0c0 4.15 5.25 8.25 5.25 8.25Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><circle cx="9" cy="7.5" r="1.9" stroke="currentColor" stroke-width="1.3"/></svg><span data-i18n="badge.location">Based in Prague</span></li>
           </ul>
           <div class="badge-hole" aria-hidden="true"></div>
         </div>
         <div class="lanyard" aria-hidden="true">
-          <img src="assets/lanyard.png" alt="" onerror="this.remove()">
+          <img src="/assets/lanyard.png" alt="" onerror="this.remove()">
         </div>
       </div>
     </div>
@@ -408,72 +425,72 @@
     <section class="intro-group">
       <!-- DRAFT: intro assembled from Artem's own facts (experience, projects, degree) — review before publishing -->
       <div class="lead">
-        <p>Hey, I’m Artem, a product designer with 5+ years of experience in fintech, B2B, B2C and SaaS products. Based in Prague.</p>
-        <p>Since 2021 I’ve worked on 85+ projects at Bozhenko Design Club and with international clients on Upwork, taking products from research and hypotheses to tested, <span style="white-space:nowrap">ready-to-build</span> interfaces.</p>
-        <p>With a degree in software engineering, I design with implementation in mind and work closely with developers, from design systems to handoff.</p>
+        <p data-i18n="about.lead1">Hey, I’m Artem, a product designer with 5+ years of experience in fintech, B2B, B2C and SaaS products. Based in Prague.</p>
+        <p data-i18n="about.lead2">Since 2021 I’ve worked on 85+ projects at Bozhenko Design Club and with international clients on Upwork, taking products from research and hypotheses to tested, <span style="white-space:nowrap">ready-to-build</span> interfaces.</p>
+        <p data-i18n="about.lead3">With a degree in software engineering, I design with implementation in mind and work closely with developers, from design systems to handoff.</p>
       </div>
 
       <div class="toolkit">
-        <h2>Current Toolkit</h2>
-        <ul class="tools" aria-label="Current toolkit">
-          <li class="tool"><img src="assets/tools/figma.svg" alt="Figma" onerror="this.remove()"></li>
-          <li class="tool"><img src="assets/tools/photoshop.svg" alt="Photoshop" onerror="this.remove()"></li>
-          <li class="tool"><img src="assets/tools/claude.svg" alt="Claude" onerror="this.remove()"></li>
-          <li class="tool tool--chatgpt"><img src="assets/tools/chatgpt.svg" alt="ChatGPT" onerror="this.remove()"></li>
-          <li class="tool"><img src="assets/tools/obsidian.svg" alt="Obsidian" onerror="this.remove()"></li>
+        <h2 data-i18n="about.toolkit">Current Toolkit</h2>
+        <ul class="tools" aria-label="Current toolkit" data-i18n-attrs="aria-label:about.toolkit.label">
+          <li class="tool"><img src="/assets/tools/figma.svg" alt="Figma" onerror="this.remove()"></li>
+          <li class="tool"><img src="/assets/tools/photoshop.svg" alt="Photoshop" onerror="this.remove()"></li>
+          <li class="tool"><img src="/assets/tools/claude.svg" alt="Claude" onerror="this.remove()"></li>
+          <li class="tool tool--chatgpt"><img src="/assets/tools/chatgpt.svg" alt="ChatGPT" onerror="this.remove()"></li>
+          <li class="tool"><img src="/assets/tools/obsidian.svg" alt="Obsidian" onerror="this.remove()"></li>
         </ul>
       </div>
     </section>
 
     <!-- ===== Experience ===== -->
     <section class="section" aria-labelledby="experience">
-      <h2 id="experience">Experience</h2>
+      <h2 id="experience" data-i18n="about.experience">Experience</h2>
       <ol class="entries">
         <li class="entry">
           <div class="entry-head">
-            <h3 class="entry-role">Product &amp; UX/UI Designer</h3>
+            <h3 class="entry-role" data-i18n="about.exp1.role">Product &amp; UX/UI Designer</h3>
             <span class="entry-org">Upwork</span>
-            <span class="entry-date">From Sep 2023</span>
+            <span class="entry-date" data-i18n="about.exp1.date">From Sep 2023</span>
           </div>
-          <p class="entry-desc">Worked independently with international clients on SaaS, B2B, web, and mobile products, covering the full design process from UX structure and prototyping to polished UI, design systems, and developer handoff. Delivered 4,800+ hours of client work, maintaining Top Rated Plus status and a 100% Job Success Score.</p>
+          <p class="entry-desc" data-i18n="about.exp1.desc">Worked independently with international clients on SaaS, B2B, web, and mobile products, covering the full design process from UX structure and prototyping to polished UI, design systems, and developer handoff. Delivered 4,800+ hours of client work, maintaining Top Rated Plus status and a 100% Job Success Score.</p>
         </li>
         <li class="entry">
           <div class="entry-head">
-            <h3 class="entry-role">Product &amp; UX/UI Designer</h3>
+            <h3 class="entry-role" data-i18n="about.exp2.role">Product &amp; UX/UI Designer</h3>
             <span class="entry-org">Bozhenko Design Club</span>
-            <span class="entry-date">From Apr 2021</span>
+            <span class="entry-date" data-i18n="about.exp2.date">From Apr 2021</span>
           </div>
-          <p class="entry-desc">Successfully contributed to 85+ projects of varying scope and complexity. Worked on end-to-end digital product design, from early concepts and UX structure to high-fidelity interfaces and developer handoff. Translated requirements into clear user flows, responsive experiences, and scalable UI patterns, including UI kits and design systems.</p>
+          <p class="entry-desc" data-i18n="about.exp2.desc">Successfully contributed to 85+ projects of varying scope and complexity. Worked on end-to-end digital product design, from early concepts and UX structure to high-fidelity interfaces and developer handoff. Translated requirements into clear user flows, responsive experiences, and scalable UI patterns, including UI kits and design systems.</p>
         </li>
         <li class="entry">
           <div class="entry-head">
-            <h3 class="entry-role">Web Designer</h3>
+            <h3 class="entry-role" data-i18n="about.exp3.role">Web Designer</h3>
             <span class="entry-org">Dimarvel</span>
-            <span class="entry-date">Feb 2020 – Mar 2021</span>
+            <span class="entry-date" data-i18n="about.exp3.date">Feb 2020 – Mar 2021</span>
           </div>
-          <p class="entry-desc">Designed commercial websites and e-commerce experiences with responsive UI. Worked on logos, banners, and digital assets, building a foundation in visual design and usability.</p>
+          <p class="entry-desc" data-i18n="about.exp3.desc">Designed commercial websites and e-commerce experiences with responsive UI. Worked on logos, banners, and digital assets, building a foundation in visual design and usability.</p>
         </li>
       </ol>
     </section>
 
     <!-- ===== Education ===== -->
     <section class="section" aria-labelledby="education">
-      <h2 id="education">Education</h2>
+      <h2 id="education" data-i18n="about.education">Education</h2>
       <ol class="entries">
         <li class="entry">
           <div class="entry-head">
-            <h3 class="entry-role">University of Radio Electronics</h3>
-            <span class="entry-org">Bachelor of IT</span>
-            <span class="entry-date">Sep 2019 – June 2023</span>
+            <h3 class="entry-role" data-i18n="about.edu1.school">University of Radio Electronics</h3>
+            <span class="entry-org" data-i18n="about.edu1.degree">Bachelor of IT</span>
+            <span class="entry-date" data-i18n="about.edu1.date">Sep 2019 – June 2023</span>
           </div>
-          <p class="entry-desc">Bachelor’s degree in Software Engineering, providing a strong technical foundation in software development, system architecture, and web technologies – helping me design feasible, scalable products and collaborate effectively with developers.</p>
+          <p class="entry-desc" data-i18n="about.edu1.desc">Bachelor’s degree in Software Engineering, providing a strong technical foundation in software development, system architecture, and web technologies – helping me design feasible, scalable products and collaborate effectively with developers.</p>
         </li>
       </ol>
     </section>
 
     <!-- ===== Contacts ===== -->
     <section class="section" aria-labelledby="contacts">
-      <h2 id="contacts">Contact &amp; Links</h2>
+      <h2 id="contacts" data-i18n="contacts.title">Contact &amp; Links</h2>
       <div class="contacts-list">
         <a href="mailto:designartems@gmail.com">designartems@gmail.com</a>
         <div class="links">
@@ -510,5 +527,6 @@
     });
   })();
 </script>
+<script src="/assets/lang-switcher.js" defer></script>
 </body>
 </html>
