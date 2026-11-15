@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Writings — Artem Shevliakov</title>
-  <meta name="description" content="Notes on product design by Artem Shevliakov: guides and working drafts on how I approach design tasks.">
+  <title data-i18n="meta.writing.title">Writings — Artem Shevliakov</title>
+  <meta name="description" content="Notes on product design by Artem Shevliakov: guides and working drafts on how I approach design tasks." data-i18n-attrs="content:meta.writing.description">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="assets/lang-switcher.css">
+  <link rel="stylesheet" href="/assets/lang-switcher.css">
 
   <style>
     /* ============ Tokens (from Figma) ============ */
@@ -269,45 +269,47 @@
 </head>
 <body>
 
-  <a class="logo" href="/" aria-label="Artem Shevliakov, home"><img src="assets/logo.svg" width="42" height="32" alt=""></a>
+  <a class="logo" href="/" aria-label="Artem Shevliakov, home" data-i18n-attrs="aria-label:logo.label"><img src="/assets/logo.svg" width="42" height="32" alt=""></a>
 
   <header class="nav-wrap">
-    <nav class="nav" aria-label="Main">
-      <a href="/">Home</a>
-      <a href="/about">About</a>
-      <a href="/writing" aria-current="page">Writing</a>
+    <nav class="nav" aria-label="Main" data-i18n-attrs="aria-label:nav.label">
+      <a href="/" data-i18n="nav.home">Home</a>
+      <a href="/about" data-i18n="nav.about">About</a>
+      <a href="/writing" aria-current="page" data-i18n="nav.writing">Writing</a>
     </nav>
   </header>
 
+  <!-- lang-switcher:start -->
   <div class="lang" data-lang>
-    <button class="lang-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="lang-menu" aria-label="Language: English">
+    <button class="lang-button" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="Language: English">
       <span class="lang-globe" aria-hidden="true"></span>
       <span class="lang-code" aria-hidden="true">EN</span>
     </button>
-    <div class="lang-menu" id="lang-menu" role="menu" aria-label="Language" hidden>
-      <button class="lang-item" type="button" role="menuitemradio" aria-checked="true" lang="en" data-code="EN">English</button>
-      <button class="lang-item" type="button" role="menuitemradio" aria-checked="false" lang="de" data-code="DE">Deutsch</button>
-      <button class="lang-item" type="button" role="menuitemradio" aria-checked="false" lang="cs" data-code="CS">Čeština</button>
-      <button class="lang-item" type="button" role="menuitemradio" aria-checked="false" lang="ru" data-code="RU">Русский</button>
+    <div class="lang-menu" id="lang-menu" hidden>
+      <a class="lang-item" href="/writing" hreflang="en" lang="en" aria-current="true">English</a>
+      <a class="lang-item" href="/de/writing" hreflang="de" lang="de">Deutsch</a>
+      <a class="lang-item" href="/cs/writing" hreflang="cs" lang="cs">Čeština</a>
+      <a class="lang-item" href="/ru/writing" hreflang="ru" lang="ru">Русский</a>
     </div>
   </div>
+  <!-- lang-switcher:end -->
 
   <main class="container">
 
     <!-- ===== Intro ===== -->
     <section class="intro">
-      <h1>Writings</h1>
-      <p>Guides and notes from my design process, written for designers who want a method they can reuse.</p>
+      <h1 data-i18n="writing.title">Writings</h1>
+      <p data-i18n="writing.intro">Guides and notes from my design process, written for designers who want a method they can reuse.</p>
     </section>
 
     <!-- ===== Notes ===== -->
-    <div class="filters" role="group" aria-label="Filter notes">
-      <button class="chip" type="button" aria-pressed="true">All <span>1</span></button>
+    <div class="filters" role="group" aria-label="Filter notes" data-i18n-attrs="aria-label:writing.filter.label">
+      <button class="chip" type="button" aria-pressed="true" data-i18n="writing.all">All <span>1</span></button>
       <button class="chip" type="button" aria-pressed="false">Label</button>
       <button class="chip" type="button" aria-pressed="false">Label</button>
     </div>
 
-    <ul class="notes" aria-label="Notes">
+    <ul class="notes" aria-label="Notes" data-i18n-attrs="aria-label:writing.list.label">
 
       <!-- TODO: href → the article page, not built yet -->
       <li>
@@ -353,14 +355,14 @@
                   <i style="right: calc(var(--u) * 5.16); top: calc(var(--u) * 16.1); width: calc(var(--u) * 28); height: calc(var(--u) * 31); border-bottom-right-radius: calc(var(--u) * 6)"></i>
                 </div>
 
-                <div class="art-check"><img src="assets/writing/check.svg" width="11" height="11" alt=""></div>
+                <div class="art-check"><img src="/assets/writing/check.svg" width="11" height="11" alt=""></div>
               </div>
-              <img class="art-pin" src="assets/writing/pin.png" width="62" height="72" alt="">
+              <img class="art-pin" src="/assets/writing/pin.png" width="62" height="72" alt="">
             </div>
           </div>
           <div class="note-text">
-            <h2 class="note-title">How to find references and benchmarks</h2>
-            <p class="note-meta">8 min</p>
+            <h2 class="note-title" data-i18n="writing.note1.title">How to find references and benchmarks</h2>
+            <p class="note-meta" data-i18n="writing.note1.meta">8 min</p>
           </div>
         </a>
       </li>
@@ -370,7 +372,7 @@
           <div class="note-cover"></div>
           <div class="note-text">
             <h2 class="note-title">Placeholder</h2>
-            <p class="note-meta">? min</p>
+            <p class="note-meta" data-i18n="writing.placeholder.meta">? min</p>
           </div>
         </div>
       </li>
@@ -379,8 +381,8 @@
         <div class="note">
           <div class="note-cover"></div>
           <div class="note-text">
-            <h2 class="note-title">How to find references and benchmarks</h2>
-            <p class="note-meta">? min</p>
+            <h2 class="note-title" data-i18n="writing.note1.title">How to find references and benchmarks</h2>
+            <p class="note-meta" data-i18n="writing.placeholder.meta">? min</p>
           </div>
         </div>
       </li>
@@ -389,8 +391,8 @@
         <div class="note">
           <div class="note-cover"></div>
           <div class="note-text">
-            <h2 class="note-title">How to find references and benchmarks</h2>
-            <p class="note-meta">? min</p>
+            <h2 class="note-title" data-i18n="writing.note1.title">How to find references and benchmarks</h2>
+            <p class="note-meta" data-i18n="writing.placeholder.meta">? min</p>
           </div>
         </div>
       </li>
@@ -398,6 +400,6 @@
     </ul>
 
   </main>
-<script src="assets/lang-switcher.js" defer></script>
+<script src="/assets/lang-switcher.js" defer></script>
 </body>
 </html>

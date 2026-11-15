@@ -75,14 +75,15 @@
   color: #4e5154;
   font: inherit;
   text-align: left;
+  text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
 }
 .lang-item:hover,
 .lang-item:focus-visible { background: #f8f8f9; }
 .lang-item:focus-visible { outline-offset: -2px; }
-.lang-item[aria-checked="true"] { color: #141516; }
-.lang-item[aria-checked="true"]::after {
+.lang-item[aria-current="true"] { color: #141516; }
+.lang-item[aria-current="true"]::after {
   content: "";
   flex: none;
   width: 20px;
@@ -90,10 +91,16 @@
   background: url("icons/check-small.svg") center / 20px 20px no-repeat;
 }
 
-/* Narrow phones: the code is dropped so the button clears the nav pill */
+/* Phones: the code is dropped so the button clears the nav pill */
 @media (max-width: 419px) {
   .lang-button { width: 38px; padding: 0; }
   .lang-code { display: none; }
+}
+/* Narrow phones: translated nav labels are longer, so the header tightens up */
+@media (max-width: 399px) {
+  .lang { right: 12px; }
+  body .logo { left: 12px; }
+  body .nav a { padding-left: 7px; padding-right: 7px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
