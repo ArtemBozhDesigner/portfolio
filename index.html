@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Inter+Tight:wght@400;500&family=Kalam&display=swap" rel="stylesheet">
 
+  <link rel="stylesheet" href="assets/lang-switcher.css">
+
   <style>
     /* ============ Tokens (from Figma) ============ */
     :root {
@@ -87,7 +89,7 @@
        Sits at the top of the page and scrolls away; only the nav pill is sticky */
     .logo {
       position: absolute;
-      top: calc(env(safe-area-inset-top, 0px) + 11px);
+      top: calc(env(safe-area-inset-top, 0px) + 15px);
       left: clamp(12px, 5.7vw, 80px);
       z-index: 11;
       display: block;
@@ -569,6 +571,19 @@
     </nav>
   </header>
 
+  <div class="lang" data-lang>
+    <button class="lang-button" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="lang-menu" aria-label="Language: English">
+      <span class="lang-globe" aria-hidden="true"></span>
+      <span class="lang-code" aria-hidden="true">EN</span>
+    </button>
+    <div class="lang-menu" id="lang-menu" role="menu" aria-label="Language" hidden>
+      <button class="lang-item" type="button" role="menuitemradio" aria-checked="true" lang="en" data-code="EN">English</button>
+      <button class="lang-item" type="button" role="menuitemradio" aria-checked="false" lang="de" data-code="DE">Deutsch</button>
+      <button class="lang-item" type="button" role="menuitemradio" aria-checked="false" lang="cs" data-code="CS">Čeština</button>
+      <button class="lang-item" type="button" role="menuitemradio" aria-checked="false" lang="ru" data-code="RU">Русский</button>
+    </div>
+  </div>
+
   <main class="container">
 
     <!-- ===== Hero ===== -->
@@ -760,5 +775,6 @@
     });
   })();
 </script>
+<script src="assets/lang-switcher.js" defer></script>
 </body>
 </html>
