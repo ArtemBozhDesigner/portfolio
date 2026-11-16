@@ -46,8 +46,8 @@ def fix_text(text, next_token):
 
 
 def fix_page(source):
-    # Scripts and styles are kept whole, every other tag is a token of its own
-    tokens = re.split(r'(<script\b.*?</script>|<style\b.*?</style>|<[^>]+>)', source, flags=re.S | re.I)
+    # Scripts, styles and <pre> blocks are kept whole, every other tag is a token of its own
+    tokens = re.split(r'(<script\b.*?</script>|<style\b.*?</style>|<pre\b.*?</pre>|<[^>]+>)', source, flags=re.S | re.I)
     in_main = False
     for i, token in enumerate(tokens):
         if token.startswith('<'):
