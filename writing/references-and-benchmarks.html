@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Finding references and a bit about benchmarking — Artem Shevliakov</title>
-  <meta name="description" content="A guide to searching for design references so that every find answers a specific question: service type, funnel stage, scenario, patterns, analysis and cuts.">
+  <title data-i18n="meta.article.title">Finding references and a bit about benchmarking — Artem Shevliakov</title>
+  <meta name="description" content="A guide to searching for design references so that every find answers a specific question: service type, funnel stage, scenario, patterns, analysis and cuts." data-i18n-attrs="content:meta.article.description">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/lang-switcher.css">
 
   <style>
     /* ============ Tokens (from Figma) ============ */
@@ -31,7 +33,8 @@
       /* Type */
       --font-body: "Inter Tight", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
-      /* Layout: 846px column for visuals, 630px measure for text, 156px side menu */
+      /* Layout: 846px column for visuals, 630px measure for text; the side menu is
+         156px in the frame and gets at least 176px so the Russian labels stay on one line */
       --column: 846px;
       --measure: 630px;
       --edge: clamp(12px, 5.7vw, 80px);
@@ -72,7 +75,7 @@
        Side menu on the left, the column centered on the page */
     .layout {
       display: grid;
-      grid-template-columns: minmax(156px, 1fr) minmax(0, var(--column)) minmax(0, 1fr);
+      grid-template-columns: minmax(176px, 1fr) minmax(0, var(--column)) minmax(0, 1fr);
       column-gap: 24px;
       padding: 100px var(--edge) 96px;
     }
@@ -86,7 +89,6 @@
       flex-direction: column;
       align-items: flex-start;
       gap: 24px;
-      width: 156px;
     }
     .back {
       display: inline-flex;
@@ -412,6 +414,7 @@
     }
     .skill-head {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 8px;
       padding: 12px 12px 12px 18px;
@@ -529,6 +532,7 @@
         margin: 0 auto 24px;
       }
       .toc { display: none; }
+      .lang { position: absolute; }
     }
     @media (max-width: 719px) {
       .layout { padding: 68px 16px 64px; }
@@ -553,147 +557,199 @@
 </head>
 <body>
 
-  <a class="logo" href="/" aria-label="Artem Shevliakov, home"><img src="/assets/logo.svg" width="42" height="32" alt=""></a>
+  <a class="logo" href="/" aria-label="Artem Shevliakov, home" data-i18n-attrs="aria-label:logo.label"><img src="/assets/logo.svg" width="42" height="32" alt=""></a>
+
+  <!-- lang-switcher:start -->
+  <div class="lang" data-lang>
+    <button class="lang-button" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="Language: English">
+      <span class="lang-globe" aria-hidden="true"></span>
+      <span class="lang-code" aria-hidden="true">EN</span>
+    </button>
+    <div class="lang-menu" id="lang-menu" hidden>
+      <a class="lang-item" href="/writing/references-and-benchmarks" hreflang="en" lang="en" aria-current="true">English</a>
+      <a class="lang-item" href="/de/writing/references-and-benchmarks" hreflang="de" lang="de">Deutsch</a>
+      <a class="lang-item" href="/cs/writing/references-and-benchmarks" hreflang="cs" lang="cs">Čeština</a>
+      <a class="lang-item" href="/ru/writing/references-and-benchmarks" hreflang="ru" lang="ru">Русский</a>
+    </div>
+  </div>
+  <!-- lang-switcher:end -->
 
   <div class="layout">
 
     <!-- ===== Side menu ===== -->
-    <nav class="side" aria-label="Article">
-      <a class="back" id="back" href="/writing">Back</a>
+    <nav class="side" aria-label="Article" data-i18n-attrs="aria-label:art.nav.label">
+      <a class="back" id="back" href="/writing" data-i18n="art.back">Back</a>
       <ol class="toc" id="toc">
-        <li><a href="#before-you-start" aria-current="location">Before you start</a></li>
-        <li><a href="#service-type">Service type &amp; funnel</a></li>
-        <li><a href="#scenario">Scenario &amp; products</a></li>
-        <li><a href="#patterns">Patterns</a></li>
-        <li><a href="#collect">Collect</a></li>
-        <li><a href="#analyze">Analyze</a></li>
-        <li><a href="#cut">Cut</a></li>
-        <li><a href="#team-check">Team check</a></li>
-        <li><a href="#result">Result</a></li>
-        <li><a href="#mobbin-claude">Mobbin &amp; Claude</a></li>
+        <li><a href="#before-you-start" aria-current="location" data-i18n="art.before-you-start">Before you start</a></li>
+        <li><a href="#service-type" data-i18n="art.service-type-funnel">Service type &amp; funnel</a></li>
+        <li><a href="#scenario" data-i18n="art.scenario-products">Scenario &amp; products</a></li>
+        <li><a href="#patterns" data-i18n="art.familiar-patterns">Familiar patterns</a></li>
+        <li><a href="#collect" data-i18n="art.collect-references">Collect references</a></li>
+        <li><a href="#analyze" data-i18n="art.analyze-findings">Analyze findings</a></li>
+        <li><a href="#cut" data-i18n="art.cut-extras">Cut extras</a></li>
+        <li><a href="#team-check" data-i18n="art.team-check">Team check</a></li>
+        <li><a href="#result" data-i18n="art.end-result">End result</a></li>
+        <li><a href="#mobbin-claude" data-i18n="art.mobbin-claude">Mobbin &amp; Claude</a></li>
       </ol>
     </nav>
 
     <main class="article">
 
       <header class="text">
-        <h1>Finding references and&nbsp;a&nbsp;bit about&nbsp;benchmarking</h1>
-        <p class="meta">5 min&nbsp;read</p>
+        <h1 data-i18n="writing.note1.title">Finding references and&nbsp;a&nbsp;bit about&nbsp;benchmarking</h1>
+        <p class="meta" data-i18n="art.5-min-read">5 min&nbsp;read</p>
       </header>
 
       <div class="text">
-        <p>Everyone collects references, but&nbsp;too often it&nbsp;ends with a&nbsp;folder of&nbsp;nice-looking screens that does nothing to&nbsp;solve the&nbsp;task. In&nbsp;this guide I’ll show a&nbsp;different way to&nbsp;search: one where every find answers a&nbsp;specific&nbsp;question.</p>
-        <p><strong>A&nbsp;reference</strong> is&nbsp;a&nbsp;single example of&nbsp;someone else’s solution: a&nbsp;screen, a&nbsp;flow or&nbsp;a&nbsp;piece of&nbsp;copy. <strong>Benchmarking</strong> is&nbsp;the&nbsp;process of&nbsp;comparing how different products solve the&nbsp;same task and&nbsp;working out why a&nbsp;solution&nbsp;works.</p>
-        <p>What matters is&nbsp;how a&nbsp;solution works, not only how it&nbsp;looks. Copy the&nbsp;visuals and&nbsp;you get a&nbsp;pretty screen. Understand the&nbsp;logic and&nbsp;you get an&nbsp;idea you can adapt to&nbsp;your own&nbsp;product.</p>
+        <p data-i18n="art.everyone-collects-references-but-too">Everyone collects references, but&nbsp;too often it&nbsp;ends with a&nbsp;folder of&nbsp;nice-looking screens that does nothing to&nbsp;solve the&nbsp;task. In&nbsp;this guide I’ll show a&nbsp;different way to&nbsp;search: one where every find answers a&nbsp;specific&nbsp;question.</p>
+        <p data-i18n="art.a-reference-is-a-single"><strong>A&nbsp;reference</strong> is&nbsp;a&nbsp;single example of&nbsp;someone else’s solution: a&nbsp;screen, a&nbsp;flow or&nbsp;a&nbsp;piece of&nbsp;copy. <strong>Benchmarking</strong> is&nbsp;the&nbsp;process of&nbsp;comparing how different products solve the&nbsp;same task and&nbsp;working out why a&nbsp;solution&nbsp;works.</p>
+        <p data-i18n="art.what-matters-is-how-a">What matters is&nbsp;how a&nbsp;solution works, not only how it&nbsp;looks. Copy the&nbsp;visuals and&nbsp;you get a&nbsp;pretty screen. Understand the&nbsp;logic and&nbsp;you get an&nbsp;idea you can adapt to&nbsp;your own&nbsp;product.</p>
       </div>
 
       <!-- ===== Before you start ===== -->
       <section id="before-you-start">
         <div class="text">
-          <h2>Three things worth knowing before you&nbsp;start</h2>
-          <p><strong>Goal.</strong> The&nbsp;outcome the&nbsp;user and&nbsp;the&nbsp;business&nbsp;need.</p>
-          <p><strong>Context.</strong> Product type, B2B or&nbsp;B2C, audience experience,&nbsp;devices.</p>
-          <p><strong>Constraints.</strong> Technical, legal and&nbsp;resource limits, plus the&nbsp;client’s expectations. They keep you from searching for&nbsp;the&nbsp;impossible, and&nbsp;later they filter what you’ve&nbsp;collected.</p>
+          <h2 data-i18n="art.three-things-worth-knowing-before">Three things worth knowing before you&nbsp;start</h2>
+          <p data-i18n="art.goal-the-outcome-the-user"><strong>Goal.</strong> The&nbsp;outcome the&nbsp;user and&nbsp;the&nbsp;business&nbsp;need.</p>
+          <p data-i18n="art.context-product-type-b2b-or"><strong>Context.</strong> Product type, B2B or&nbsp;B2C, audience experience,&nbsp;devices.</p>
+          <p data-i18n="art.constraints-technical-legal-and-resource"><strong>Constraints.</strong> Technical, legal and&nbsp;resource limits, plus the&nbsp;client’s expectations. They keep you from searching for&nbsp;the&nbsp;impossible, and&nbsp;later they filter what you’ve&nbsp;collected.</p>
         </div>
       </section>
 
       <!-- ===== Service type and funnel ===== -->
       <section id="service-type">
         <div class="text">
-          <h2>Identify the&nbsp;service type and&nbsp;the&nbsp;funnel&nbsp;stage</h2>
-          <p>The&nbsp;service type and&nbsp;the&nbsp;funnel stage define the&nbsp;goal of&nbsp;a&nbsp;screen, and&nbsp;so&nbsp;they define which products are comparable. SaaS onboarding and&nbsp;a&nbsp;store checkout solve different tasks, even if&nbsp;both look like a&nbsp;multi-step&nbsp;form.</p>
-          <p>Below I’ve drawn a&nbsp;simplified funnel for&nbsp;each service&nbsp;type.</p>
+          <h2 data-i18n="art.identify-the-service-type-and">Identify the&nbsp;service type and&nbsp;the&nbsp;funnel&nbsp;stage</h2>
+          <p data-i18n="art.the-service-type-and-the">The&nbsp;service type and&nbsp;the&nbsp;funnel stage define the&nbsp;goal of&nbsp;a&nbsp;screen, and&nbsp;so&nbsp;they define which products are comparable. SaaS onboarding and&nbsp;a&nbsp;store checkout solve different tasks, even if&nbsp;both look like a&nbsp;multi-step&nbsp;form.</p>
+          <p data-i18n="art.below-i-ve-drawn-a">Below I’ve drawn a&nbsp;simplified funnel for&nbsp;each service&nbsp;type.</p>
         </div>
 
-        <div class="slider" id="funnels" role="region" aria-roledescription="carousel" aria-label="Funnels by service type">
+        <div class="slider" id="funnels" role="region" aria-roledescription="carousel" aria-label="Funnels by service type" data-i18n-attrs="aria-label:art.slider.label">
           <div class="slider-view">
-            <ul class="slides" tabindex="0" aria-label="Funnel slides">
-            <li class="slide" role="group" aria-roledescription="slide" aria-label="1 of 3: SaaS">
+            <ul class="slides" tabindex="0" aria-label="Funnel slides" data-i18n-attrs="aria-label:art.slider.slides">
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="1 of 3: SaaS" data-i18n-attrs="aria-label:art.slider.slide1">
               <img class="f f-shape" src="/assets/writing/funnel.svg" width="429" height="454" alt="" style="--y:146;--h:454">
               <span class="f f-sep" style="--y:222"></span>
               <span class="f f-sep" style="--y:356"></span>
               <span class="f f-sep" style="--y:490"></span>
-              <h3 class="f f-title" style="--y:60">SaaS</h3>
-              <p class="f f-sub" style="--y:100">Software as&nbsp;a&nbsp;service. Apps and&nbsp;online&nbsp;services</p>
-              <p class="f f-stage" style="--y:172">Onboarding,&nbsp;activation</p>
-              <p class="f f-stage" style="--y:254">Usage&nbsp;→ aha&nbsp;moment</p>
-              <p class="f f-stage f-stage--2" style="--y:278">Freemium&nbsp;→ Paywall&nbsp;→ Free&nbsp;trial</p>
-              <ul class="f f-labels" style="--y:310"><li>Custom flows, business-specific&nbsp;logic</li></ul>
-              <p class="f f-stage f-wrap" style="--y:388;--w:222">Upgrade to&nbsp;a&nbsp;paid plan, recurring&nbsp;payment</p>
-              <ul class="f f-labels" style="--y:444"><li>Payment</li></ul>
-              <p class="f f-stage" style="--y:522">Retention,&nbsp;upsell</p>
-              <ul class="f f-labels" style="--y:554"><li>Account</li></ul>
-              <p class="f f-stage" style="--y:626">Subscription renewal,&nbsp;upgrade</p>
+              <h3 class="f f-title" style="--y:60" data-i18n="art.saas">SaaS</h3>
+              <p class="f f-sub" style="--y:100" data-i18n="art.software-as-a-service-apps">Software as&nbsp;a&nbsp;service. Apps and&nbsp;online&nbsp;services</p>
+              <p class="f f-stage" style="--y:172" data-i18n="art.onboarding-activation">Onboarding,&nbsp;activation</p>
+              <p class="f f-stage" style="--y:254" data-i18n="art.usage-aha-moment">Usage&nbsp;→ aha&nbsp;moment</p>
+              <p class="f f-stage f-stage--2" style="--y:278" data-i18n="art.freemium-paywall-free-trial">Freemium&nbsp;→ Paywall&nbsp;→ Free&nbsp;trial</p>
+              <ul class="f f-labels" style="--y:310">
+                <li data-i18n="art.custom-flows-business-specific-logic">Custom flows, business-specific&nbsp;logic</li>
+              </ul>
+              <p class="f f-stage f-wrap" style="--y:388;--w:222" data-i18n="art.upgrade-to-a-paid-plan">Upgrade to&nbsp;a&nbsp;paid plan, recurring&nbsp;payment</p>
+              <ul class="f f-labels" style="--y:444">
+                <li data-i18n="art.payment">Payment</li>
+              </ul>
+              <p class="f f-stage" style="--y:522" data-i18n="art.retention-upsell">Retention,&nbsp;upsell</p>
+              <ul class="f f-labels" style="--y:554">
+                <li data-i18n="art.account">Account</li>
+              </ul>
+              <p class="f f-stage" style="--y:626" data-i18n="art.subscription-renewal-upgrade">Subscription renewal,&nbsp;upgrade</p>
             </li>
-            <li class="slide" role="group" aria-roledescription="slide" aria-label="2 of 3: E-commerce">
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="2 of 3: E-commerce" data-i18n-attrs="aria-label:art.slider.slide2">
               <img class="f f-shape" src="/assets/writing/funnel.svg" width="429" height="454" alt="" style="--y:156;--h:454">
               <span class="f f-sep" style="--y:260"></span>
               <span class="f f-sep" style="--y:394"></span>
               <span class="f f-sep" style="--y:504"></span>
-              <h3 class="f f-title" style="--y:50">E-commerce</h3>
-              <p class="f f-sub f-wrap" style="--y:90;--w:345">Stores and&nbsp;any services with a&nbsp;catalog and&nbsp;a&nbsp;process of&nbsp;choosing and&nbsp;buying</p>
-              <p class="f f-stage" style="--y:182">Finding a&nbsp;product, comparing&nbsp;options</p>
-              <ul class="f f-labels" style="--y:214"><li>Catalog</li></ul>
-              <p class="f f-stage" style="--y:292">Building trust in&nbsp;the&nbsp;product,<br>adding to&nbsp;cart</p>
-              <ul class="f f-labels" style="--y:348"><li>Product&nbsp;Page</li></ul>
-              <p class="f f-stage" style="--y:426">Checkout and&nbsp;payment</p>
-              <ul class="f f-labels" style="--y:458"><li>Cart</li><li>Payment</li><li>Identification</li></ul>
-              <p class="f f-stage" style="--y:532">Delivery and&nbsp;pickup</p>
-              <ul class="f f-labels" style="--y:564"><li>Account</li></ul>
-              <p class="f f-stage" style="--y:636">Repeat&nbsp;purchases</p>
+              <h3 class="f f-title" style="--y:50" data-i18n="art.e-commerce">E-commerce</h3>
+              <p class="f f-sub f-wrap" style="--y:90;--w:345" data-i18n="art.stores-and-any-services-with">Stores and&nbsp;any services with a&nbsp;catalog and&nbsp;a&nbsp;process of&nbsp;choosing and&nbsp;buying</p>
+              <p class="f f-stage" style="--y:182" data-i18n="art.finding-a-product-comparing-options">Finding a&nbsp;product, comparing&nbsp;options</p>
+              <ul class="f f-labels" style="--y:214">
+                <li data-i18n="art.catalog">Catalog</li>
+              </ul>
+              <p class="f f-stage" style="--y:292" data-i18n="art.building-trust-in-the-product">Building trust in&nbsp;the&nbsp;product,<br>adding to&nbsp;cart</p>
+              <ul class="f f-labels" style="--y:348">
+                <li data-i18n="art.product-page">Product&nbsp;Page</li>
+              </ul>
+              <p class="f f-stage" style="--y:426" data-i18n="art.checkout-and-payment">Checkout and&nbsp;payment</p>
+              <ul class="f f-labels" style="--y:458">
+                <li data-i18n="art.cart">Cart</li>
+                <li data-i18n="art.payment">Payment</li>
+                <li data-i18n="art.identification">Identification</li>
+              </ul>
+              <p class="f f-stage" style="--y:532" data-i18n="art.delivery-and-pickup">Delivery and&nbsp;pickup</p>
+              <ul class="f f-labels" style="--y:564">
+                <li data-i18n="art.account">Account</li>
+              </ul>
+              <p class="f f-stage" style="--y:636" data-i18n="art.repeat-purchases">Repeat&nbsp;purchases</p>
             </li>
-            <li class="slide" role="group" aria-roledescription="slide" aria-label="3 of 3: Services">
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="3 of 3: Services" data-i18n-attrs="aria-label:art.slider.slide3">
               <img class="f f-shape" src="/assets/writing/funnel-tall.svg" width="429" height="482" alt="" style="--y:132;--h:482">
               <span class="f f-sep" style="--y:236"></span>
               <span class="f f-sep" style="--y:394"></span>
               <span class="f f-sep" style="--y:504"></span>
-              <h3 class="f f-title" style="--y:46">Services</h3>
-              <p class="f f-sub" style="--y:86">Informational websites that sell&nbsp;services</p>
-              <p class="f f-stage" style="--y:158">Finding a&nbsp;service, studying the&nbsp;terms</p>
-              <ul class="f f-labels" style="--y:190"><li>Home</li><li>Catalog</li><li>Portfolio</li><li>Pricing</li><li>Plans</li></ul>
-              <p class="f f-stage f-wrap" style="--y:268;--w:216">Building trust in&nbsp;the&nbsp;company and&nbsp;the&nbsp;service</p>
-              <ul class="f f-labels" style="--y:324"><li>About</li><li>Partners</li><li>Team</li><li>Careers</li></ul>
-              <ul class="f f-labels" style="--y:348"><li>Press</li><li>Blog</li><li>Detail&nbsp;Page</li></ul>
-              <p class="f f-stage" style="--y:426">First contact, first&nbsp;payment</p>
-              <ul class="f f-labels" style="--y:458"><li>Cart</li><li>Direction</li><li>CTA&nbsp;section</li></ul>
-              <p class="f f-stage" style="--y:536">Service&nbsp;delivery</p>
-              <ul class="f f-labels" style="--y:568"><li>Account</li></ul>
-              <p class="f f-stage" style="--y:640">Repeat&nbsp;purchases</p>
+              <h3 class="f f-title" style="--y:46" data-i18n="art.services">Services</h3>
+              <p class="f f-sub" style="--y:86" data-i18n="art.informational-websites-that-sell-services">Informational websites that sell&nbsp;services</p>
+              <p class="f f-stage" style="--y:158" data-i18n="art.finding-a-service-studying-the">Finding a&nbsp;service, studying the&nbsp;terms</p>
+              <ul class="f f-labels" style="--y:190">
+                <li data-i18n="art.home">Home</li>
+                <li data-i18n="art.catalog">Catalog</li>
+                <li data-i18n="art.portfolio">Portfolio</li>
+                <li data-i18n="art.pricing">Pricing</li>
+                <li data-i18n="art.plans">Plans</li>
+              </ul>
+              <p class="f f-stage f-wrap" style="--y:268;--w:216" data-i18n="art.building-trust-in-the-company">Building trust in&nbsp;the&nbsp;company and&nbsp;the&nbsp;service</p>
+              <ul class="f f-labels" style="--y:324">
+                <li data-i18n="art.about">About</li>
+                <li data-i18n="art.partners">Partners</li>
+                <li data-i18n="art.team">Team</li>
+                <li data-i18n="art.careers">Careers</li>
+              </ul>
+              <ul class="f f-labels" style="--y:348">
+                <li data-i18n="art.press">Press</li>
+                <li data-i18n="art.blog">Blog</li>
+                <li data-i18n="art.detail-page">Detail&nbsp;Page</li>
+              </ul>
+              <p class="f f-stage" style="--y:426" data-i18n="art.first-contact-first-payment">First contact, first&nbsp;payment</p>
+              <ul class="f f-labels" style="--y:458">
+                <li data-i18n="art.cart">Cart</li>
+                <li data-i18n="art.direction">Direction</li>
+                <li data-i18n="art.cta-section">CTA&nbsp;section</li>
+              </ul>
+              <p class="f f-stage" style="--y:536" data-i18n="art.service-delivery">Service&nbsp;delivery</p>
+              <ul class="f f-labels" style="--y:568">
+                <li data-i18n="art.account">Account</li>
+              </ul>
+              <p class="f f-stage" style="--y:640" data-i18n="art.repeat-purchases">Repeat&nbsp;purchases</p>
             </li>
             </ul>
-            <button class="slider-btn slider-btn--prev" type="button" aria-label="Previous slide" disabled><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
-            <button class="slider-btn slider-btn--next" type="button" aria-label="Next slide"><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
+            <button class="slider-btn slider-btn--prev" type="button" aria-label="Previous slide" data-i18n-attrs="aria-label:art.slider.prev" disabled><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
+            <button class="slider-btn slider-btn--next" type="button" aria-label="Next slide" data-i18n-attrs="aria-label:art.slider.next"><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
           </div>
           <div class="dots">
-          <button class="dot" type="button" aria-label="Show slide 1: SaaS" aria-current="true"></button>
-          <button class="dot" type="button" aria-label="Show slide 2: E-commerce"></button>
-          <button class="dot" type="button" aria-label="Show slide 3: Services"></button>
+          <button class="dot" type="button" aria-label="Show slide 1: SaaS" data-i18n-attrs="aria-label:art.slider.dot1" aria-current="true"></button>
+          <button class="dot" type="button" aria-label="Show slide 2: E-commerce" data-i18n-attrs="aria-label:art.slider.dot2"></button>
+          <button class="dot" type="button" aria-label="Show slide 3: Services" data-i18n-attrs="aria-label:art.slider.dot3"></button>
           </div>
         </div>
 
         <div class="text">
-          <p>Once you know the&nbsp;stage, you stop looking for&nbsp;“fintech references” and&nbsp;start looking for&nbsp;“onboarding and&nbsp;activation in&nbsp;SaaS”. The&nbsp;pool of&nbsp;suitable products grows beyond your industry, and&nbsp;the&nbsp;search itself gets more precise: you’re comparing solutions to&nbsp;the&nbsp;same&nbsp;task.</p>
+          <p data-i18n="art.once-you-know-the-stage">Once you know the&nbsp;stage, you stop looking for&nbsp;“fintech references” and&nbsp;start looking for&nbsp;“onboarding and&nbsp;activation in&nbsp;SaaS”. The&nbsp;pool of&nbsp;suitable products grows beyond your industry, and&nbsp;the&nbsp;search itself gets more precise: you’re comparing solutions to&nbsp;the&nbsp;same&nbsp;task.</p>
         </div>
       </section>
 
       <!-- ===== Scenario and products ===== -->
       <section id="scenario">
         <div class="text">
-          <h2>Describe the&nbsp;scenario and&nbsp;decide whose products to&nbsp;look&nbsp;at</h2>
-          <p>Compare scenarios, not whole products. First describe yours without any interface: what the&nbsp;user wants to&nbsp;get and&nbsp;which steps it&nbsp;takes.</p>
-          <p>Then look for&nbsp;products that already solve it,&nbsp;moving from near to&nbsp;far:</p>
-          <p><strong>Direct competitors.</strong> The&nbsp;same product for&nbsp;the&nbsp;same&nbsp;audience.</p>
-          <p><strong>Adjacent products.</strong> The&nbsp;same category, another price segment or&nbsp;audience.</p>
-          <p><strong>Neighboring fields.</strong> The&nbsp;same mechanic elsewhere: document checks exist in&nbsp;banks, car sharing and&nbsp;home&nbsp;rentals.</p>
-          <p><strong>Market leaders.</strong> From any industry. Their solutions are usually backed by&nbsp;research.</p>
+          <h2 data-i18n="art.describe-the-scenario-and-decide">Describe the&nbsp;scenario and&nbsp;decide whose products to&nbsp;look&nbsp;at</h2>
+          <p data-i18n="art.compare-scenarios-not-whole-products">Compare scenarios, not whole products. First describe yours without any interface: what the&nbsp;user wants to&nbsp;get and&nbsp;which steps it&nbsp;takes.</p>
+          <p data-i18n="art.then-look-for-products-that">Then look for&nbsp;products that already solve it,&nbsp;moving from near to&nbsp;far:</p>
+          <p data-i18n="art.direct-competitors-the-same-product"><strong>Direct competitors.</strong> The&nbsp;same product for&nbsp;the&nbsp;same&nbsp;audience.</p>
+          <p data-i18n="art.adjacent-products-the-same-category"><strong>Adjacent products.</strong> The&nbsp;same category, another price segment or&nbsp;audience.</p>
+          <p data-i18n="art.neighboring-fields-the-same-mechanic"><strong>Neighboring fields.</strong> The&nbsp;same mechanic elsewhere: document checks exist in&nbsp;banks, car sharing and&nbsp;home&nbsp;rentals.</p>
+          <p data-i18n="art.market-leaders-from-any-industry"><strong>Market leaders.</strong> From any industry. Their solutions are usually backed by&nbsp;research.</p>
         </div>
       </section>
 
       <!-- ===== Patterns ===== -->
       <section id="patterns">
         <div class="text">
-          <h2>Break the&nbsp;task into familiar&nbsp;patterns</h2>
-          <p>Most tasks are assembled from parts that have been solved many times: a&nbsp;catalog, a&nbsp;detail page, a&nbsp;cart. People know how these parts work from other products and&nbsp;expect yours to&nbsp;work the&nbsp;same way (Jakob’s Law). So&nbsp;name the&nbsp;patterns in&nbsp;your task and&nbsp;look for&nbsp;references to&nbsp;each one. Below is&nbsp;a&nbsp;map of&nbsp;the&nbsp;common&nbsp;ones.</p>
+          <h2 data-i18n="art.break-the-task-into-familiar">Break the&nbsp;task into familiar&nbsp;patterns</h2>
+          <p data-i18n="art.most-tasks-are-assembled-from">Most tasks are assembled from parts that have been solved many times: a&nbsp;catalog, a&nbsp;detail page, a&nbsp;cart. People know how these parts work from other products and&nbsp;expect yours to&nbsp;work the&nbsp;same way (Jakob’s Law). So&nbsp;name the&nbsp;patterns in&nbsp;your task and&nbsp;look for&nbsp;references to&nbsp;each one. Below is&nbsp;a&nbsp;map of&nbsp;the&nbsp;common&nbsp;ones.</p>
         </div>
 
         <div class="patterns" id="pattern-map">
@@ -701,52 +757,52 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-authentication-head" aria-expanded="true" aria-controls="pattern-authentication-panel">
                 <img src="/assets/writing/patterns/fingerprint.svg" width="24" height="24" alt="">
-                <span class="row-title">Authentication</span>
+                <span class="row-title" data-i18n="art.authentication">Authentication</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-authentication-panel" role="region" aria-labelledby="pattern-authentication-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">Sign-up, sign in&nbsp;and&nbsp;the&nbsp;checks that confirm a&nbsp;user’s&nbsp;identity.</p>
+                  <p class="row-desc" data-i18n="art.sign-up-sign-in-and">Sign-up, sign in&nbsp;and&nbsp;the&nbsp;checks that confirm a&nbsp;user’s&nbsp;identity.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>Signup</h4>
+                      <h4 data-i18n="art.signup">Signup</h4>
                       <ul>
-                        <li>via&nbsp;socials</li>
-                        <li>via&nbsp;email</li>
-                        <li>via&nbsp;phone</li>
-                        <li>specific: card/contract&nbsp;number</li>
+                        <li data-i18n="art.via-socials">via&nbsp;socials</li>
+                        <li data-i18n="art.via-email">via&nbsp;email</li>
+                        <li data-i18n="art.via-phone">via&nbsp;phone</li>
+                        <li data-i18n="art.specific-card-contract-number">specific: card/contract&nbsp;number</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>2FA</h4>
+                      <h4 data-i18n="art.2fa">2FA</h4>
                       <ul>
-                        <li>via&nbsp;email</li>
-                        <li>via&nbsp;phone</li>
-                        <li>authenticator&nbsp;apps</li>
-                        <li>passcode</li>
-                        <li>Touch ID,&nbsp;Face&nbsp;ID</li>
+                        <li data-i18n="art.via-email">via&nbsp;email</li>
+                        <li data-i18n="art.via-phone">via&nbsp;phone</li>
+                        <li data-i18n="art.authenticator-apps">authenticator&nbsp;apps</li>
+                        <li data-i18n="art.passcode">passcode</li>
+                        <li data-i18n="art.touch-id-face-id">Touch ID,&nbsp;Face&nbsp;ID</li>
                       </ul>
                     </div>
                   </div>
                   <div class="row-singles">
-                    <h4>Consents,&nbsp;agreements</h4>
-                    <h4>Login</h4>
-                    <h4>Password&nbsp;reset</h4>
-                    <h4>Identity Verification&nbsp;(KYC)</h4>
+                    <h4 data-i18n="art.consents-agreements">Consents,&nbsp;agreements</h4>
+                    <h4 data-i18n="art.login">Login</h4>
+                    <h4 data-i18n="art.password-reset">Password&nbsp;reset</h4>
+                    <h4 data-i18n="art.identity-verification-kyc">Identity Verification&nbsp;(KYC)</h4>
                   </div>
                   <hr>
                   <div class="row-used">
-                    <h4>KYC also used&nbsp;in</h4>
+                    <h4 data-i18n="art.kyc-also-used-in">KYC also used&nbsp;in</h4>
                     <ul class="chips">
-                      <li>Fintech and&nbsp;crypto</li>
-                      <li>Online&nbsp;betting</li>
-                      <li>Mobile&nbsp;operators</li>
-                      <li>Car&nbsp;rental</li>
-                      <li>Freelance&nbsp;platforms</li>
-                      <li>Telehealth</li>
+                      <li data-i18n="art.fintech-and-crypto">Fintech and&nbsp;crypto</li>
+                      <li data-i18n="art.online-betting">Online&nbsp;betting</li>
+                      <li data-i18n="art.mobile-operators">Mobile&nbsp;operators</li>
+                      <li data-i18n="art.car-rental">Car&nbsp;rental</li>
+                      <li data-i18n="art.freelance-platforms">Freelance&nbsp;platforms</li>
+                      <li data-i18n="art.telehealth">Telehealth</li>
                     </ul>
                   </div>
                 </div>
@@ -757,48 +813,48 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-onboarding-head" aria-expanded="true" aria-controls="pattern-onboarding-panel">
                 <img src="/assets/writing/patterns/rocket.svg" width="24" height="24" alt="">
-                <span class="row-title">Onboarding and&nbsp;Activation</span>
+                <span class="row-title" data-i18n="art.onboarding-and-activation">Onboarding and&nbsp;Activation</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-onboarding-panel" role="region" aria-labelledby="pattern-onboarding-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">The&nbsp;first-run experience that leads a&nbsp;new user to&nbsp;the&nbsp;product’s core&nbsp;value.</p>
+                  <p class="row-desc" data-i18n="art.the-first-run-experience-that">The&nbsp;first-run experience that leads a&nbsp;new user to&nbsp;the&nbsp;product’s core&nbsp;value.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>First&nbsp;screens</h4>
+                      <h4 data-i18n="art.first-screens">First&nbsp;screens</h4>
                       <ul>
-                        <li>Splash&nbsp;screen</li>
-                        <li>Welcome&nbsp;screen</li>
-                        <li>Feature&nbsp;carousel</li>
+                        <li data-i18n="art.splash-screen">Splash&nbsp;screen</li>
+                        <li data-i18n="art.welcome-screen">Welcome&nbsp;screen</li>
+                        <li data-i18n="art.feature-carousel">Feature&nbsp;carousel</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Account</h4>
+                      <h4 data-i18n="art.new-account">New&nbsp;account</h4>
                       <ul>
-                        <li><button class="row-link" type="button" data-open="pattern-authentication">Authentication</button></li>
-                        <li>Account&nbsp;setup</li>
+                        <li><button class="row-link" type="button" data-open="pattern-authentication" data-i18n="art.authentication">Authentication</button></li>
+                        <li data-i18n="art.account-setup">Account&nbsp;setup</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Guidance</h4>
+                      <h4 data-i18n="art.guidance">Guidance</h4>
                       <ul>
-                        <li>Getting-started&nbsp;guide</li>
-                        <li>Product tour with&nbsp;tooltips</li>
+                        <li data-i18n="art.getting-started-guide">Getting-started&nbsp;guide</li>
+                        <li data-i18n="art.product-tour-with-tooltips">Product tour with&nbsp;tooltips</li>
                       </ul>
                     </div>
                   </div>
                   <hr>
                   <div class="row-used">
-                    <h4>Activation&nbsp;examples</h4>
+                    <h4 data-i18n="art.activation-examples">Activation&nbsp;examples</h4>
                     <ul class="chips">
-                      <li>Music: first&nbsp;playlist</li>
-                      <li>Fitness: first&nbsp;workout</li>
-                      <li>Messaging: first&nbsp;message</li>
-                      <li>Ride-hailing: first&nbsp;ride</li>
-                      <li>File storage: first shared&nbsp;folder</li>
+                      <li data-i18n="art.music-first-playlist">Music: first&nbsp;playlist</li>
+                      <li data-i18n="art.fitness-first-workout">Fitness: first&nbsp;workout</li>
+                      <li data-i18n="art.messaging-first-message">Messaging: first&nbsp;message</li>
+                      <li data-i18n="art.ride-hailing-first-ride">Ride-hailing: first&nbsp;ride</li>
+                      <li data-i18n="art.file-storage-first-shared-folder">File storage: first shared&nbsp;folder</li>
                     </ul>
                   </div>
                 </div>
@@ -809,50 +865,50 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-catalog-head" aria-expanded="true" aria-controls="pattern-catalog-panel">
                 <img src="/assets/writing/patterns/catalog.svg" width="24" height="24" alt="">
-                <span class="row-title">Catalog</span>
+                <span class="row-title" data-i18n="art.catalog">Catalog</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-catalog-panel" role="region" aria-labelledby="pattern-catalog-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">A&nbsp;large set of&nbsp;items that users browse, search, filter and&nbsp;sort.</p>
+                  <p class="row-desc" data-i18n="art.a-large-set-of-items">A&nbsp;large set of&nbsp;items that users browse, search, filter and&nbsp;sort.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>Structure</h4>
+                      <h4 data-i18n="art.structure">Structure</h4>
                       <ul>
-                        <li>Category tree and&nbsp;mega&nbsp;menu</li>
-                        <li>Nested&nbsp;subcategories</li>
+                        <li data-i18n="art.category-tree-and-mega-menu">Category tree and&nbsp;mega&nbsp;menu</li>
+                        <li data-i18n="art.nested-subcategories">Nested&nbsp;subcategories</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Finding&nbsp;items</h4>
+                      <h4 data-i18n="art.finding-items">Finding&nbsp;items</h4>
                       <ul>
-                        <li>Filters and&nbsp;sorting</li>
-                        <li>Search and&nbsp;results&nbsp;page</li>
-                        <li>Item&nbsp;comparison</li>
+                        <li data-i18n="art.filters-and-sorting">Filters and&nbsp;sorting</li>
+                        <li data-i18n="art.search-and-results-page">Search and&nbsp;results&nbsp;page</li>
+                        <li data-i18n="art.item-comparison">Item&nbsp;comparison</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Variations</h4>
+                      <h4 data-i18n="art.variations">Variations</h4>
                       <ul>
-                        <li>Catalogs of&nbsp;brands, series and&nbsp;collections</li>
-                        <li>Ready-made sets of&nbsp;products: recipes, room&nbsp;designs</li>
+                        <li data-i18n="art.catalogs-of-brands-series-and">Catalogs of&nbsp;brands, series and&nbsp;collections</li>
+                        <li data-i18n="art.ready-made-sets-of-products">Ready-made sets of&nbsp;products: recipes, room&nbsp;designs</li>
                       </ul>
                     </div>
                   </div>
                   <hr>
                   <div class="row-used">
-                    <h4>Also used&nbsp;in</h4>
+                    <h4 data-i18n="art.also-used-in">Also used&nbsp;in</h4>
                     <ul class="chips">
-                      <li>Job&nbsp;boards</li>
-                      <li>Real estate&nbsp;listings</li>
-                      <li>Travel&nbsp;booking</li>
-                      <li>Review&nbsp;sites</li>
-                      <li>Library&nbsp;catalogs</li>
-                      <li>Knowledge&nbsp;bases</li>
-                      <li>Task&nbsp;trackers</li>
+                      <li data-i18n="art.job-boards">Job&nbsp;boards</li>
+                      <li data-i18n="art.real-estate-listings">Real estate&nbsp;listings</li>
+                      <li data-i18n="art.travel-booking">Travel&nbsp;booking</li>
+                      <li data-i18n="art.review-sites">Review&nbsp;sites</li>
+                      <li data-i18n="art.library-catalogs">Library&nbsp;catalogs</li>
+                      <li data-i18n="art.knowledge-bases">Knowledge&nbsp;bases</li>
+                      <li data-i18n="art.task-trackers">Task&nbsp;trackers</li>
                     </ul>
                   </div>
                 </div>
@@ -863,43 +919,43 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-detail-head" aria-expanded="true" aria-controls="pattern-detail-panel">
                 <img src="/assets/writing/patterns/pagetext.svg" width="24" height="24" alt="">
-                <span class="row-title">Detail Page</span>
+                <span class="row-title" data-i18n="art.detail-page">Detail Page</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-detail-panel" role="region" aria-labelledby="pattern-detail-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">The&nbsp;page with full information about one item, where users decide what to&nbsp;do&nbsp;next.</p>
+                  <p class="row-desc" data-i18n="art.the-page-with-full-information">The&nbsp;page with full information about one item, where users decide what to&nbsp;do&nbsp;next.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>Options</h4>
+                      <h4 data-i18n="art.options">Options</h4>
                       <ul>
-                        <li>Variants: size,&nbsp;color</li>
-                        <li>Bundles</li>
-                        <li><button class="row-link" type="button" data-open="pattern-configurator">Configurator and&nbsp;Form</button></li>
+                        <li data-i18n="art.variants-size-color">Variants: size,&nbsp;color</li>
+                        <li data-i18n="art.bundles">Bundles</li>
+                        <li><button class="row-link" type="button" data-open="pattern-configurator" data-i18n="art.configurator-and-form">Configurator and&nbsp;Form</button></li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Content</h4>
+                      <h4 data-i18n="art.content">Content</h4>
                       <ul>
-                        <li>Text, key facts, tables,&nbsp;reviews</li>
-                        <li>Photos and&nbsp;video</li>
-                        <li>Carousels and&nbsp;accordions</li>
+                        <li data-i18n="art.text-key-facts-tables-reviews">Text, key facts, tables,&nbsp;reviews</li>
+                        <li data-i18n="art.photos-and-video">Photos and&nbsp;video</li>
+                        <li data-i18n="art.carousels-and-accordions">Carousels and&nbsp;accordions</li>
                       </ul>
                     </div>
                   </div>
                   <hr>
                   <div class="row-used">
-                    <h4>Also used&nbsp;in</h4>
+                    <h4 data-i18n="art.also-used-in">Also used&nbsp;in</h4>
                     <ul class="chips">
-                      <li>Property&nbsp;listing</li>
-                      <li>Job&nbsp;posting</li>
-                      <li>Hotel&nbsp;page</li>
-                      <li>App store&nbsp;page</li>
-                      <li>Course&nbsp;page</li>
-                      <li>Task&nbsp;card</li>
+                      <li data-i18n="art.property-listing">Property&nbsp;listing</li>
+                      <li data-i18n="art.job-posting">Job&nbsp;posting</li>
+                      <li data-i18n="art.hotel-page">Hotel&nbsp;page</li>
+                      <li data-i18n="art.app-store-page">App store&nbsp;page</li>
+                      <li data-i18n="art.course-page">Course&nbsp;page</li>
+                      <li data-i18n="art.task-card">Task&nbsp;card</li>
                     </ul>
                   </div>
                 </div>
@@ -910,50 +966,50 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-configurator-head" aria-expanded="true" aria-controls="pattern-configurator-panel">
                 <img src="/assets/writing/patterns/input.svg" width="24" height="24" alt="">
-                <span class="row-title">Configurator and&nbsp;Form</span>
+                <span class="row-title" data-i18n="art.configurator-and-form">Configurator and&nbsp;Form</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-configurator-panel" role="region" aria-labelledby="pattern-configurator-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">Step-by-step input where each answer shapes the&nbsp;next step and&nbsp;the&nbsp;final&nbsp;result.</p>
+                  <p class="row-desc" data-i18n="art.step-by-step-input-where">Step-by-step input where each answer shapes the&nbsp;next step and&nbsp;the&nbsp;final&nbsp;result.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>Entering&nbsp;data</h4>
+                      <h4 data-i18n="art.entering-data">Entering&nbsp;data</h4>
                       <ul>
-                        <li>Text</li>
-                        <li>Numbers: exact value, estimate or&nbsp;range</li>
-                        <li>Location: address or&nbsp;map</li>
-                        <li>File&nbsp;upload</li>
+                        <li data-i18n="art.text">Text</li>
+                        <li data-i18n="art.numbers-exact-value-estimate-or">Numbers: exact value, estimate or&nbsp;range</li>
+                        <li data-i18n="art.location-address-or-map">Location: address or&nbsp;map</li>
+                        <li data-i18n="art.file-upload">File&nbsp;upload</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Choosing from a&nbsp;list</h4>
+                      <h4 data-i18n="art.choosing-from-a-list">Choosing from a&nbsp;list</h4>
                       <ul>
-                        <li>One&nbsp;option</li>
-                        <li>Several&nbsp;options</li>
+                        <li data-i18n="art.one-option">One&nbsp;option</li>
+                        <li data-i18n="art.several-options">Several&nbsp;options</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Result</h4>
+                      <h4 data-i18n="art.result">Result</h4>
                       <ul>
-                        <li>Summary of&nbsp;choices</li>
-                        <li>Submitting the&nbsp;form</li>
+                        <li data-i18n="art.summary-of-choices">Summary of&nbsp;choices</li>
+                        <li data-i18n="art.submitting-the-form">Submitting the&nbsp;form</li>
                       </ul>
                     </div>
                   </div>
                   <hr>
                   <div class="row-used">
-                    <h4>Also used&nbsp;in</h4>
+                    <h4 data-i18n="art.also-used-in">Also used&nbsp;in</h4>
                     <ul class="chips">
-                      <li>Car&nbsp;configurator</li>
-                      <li>Custom&nbsp;furniture</li>
-                      <li>Insurance&nbsp;quote</li>
-                      <li>Tax&nbsp;return</li>
-                      <li>Account&nbsp;opening</li>
-                      <li>Software&nbsp;setup</li>
+                      <li data-i18n="art.car-configurator">Car&nbsp;configurator</li>
+                      <li data-i18n="art.custom-furniture">Custom&nbsp;furniture</li>
+                      <li data-i18n="art.insurance-quote">Insurance&nbsp;quote</li>
+                      <li data-i18n="art.tax-return">Tax&nbsp;return</li>
+                      <li data-i18n="art.account-opening">Account&nbsp;opening</li>
+                      <li data-i18n="art.software-setup">Software&nbsp;setup</li>
                     </ul>
                   </div>
                 </div>
@@ -964,45 +1020,45 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-custom-head" aria-expanded="true" aria-controls="pattern-custom-panel">
                 <img src="/assets/writing/patterns/process.svg" width="24" height="24" alt="">
-                <span class="row-title">Custom Flow</span>
+                <span class="row-title" data-i18n="art.custom-flow">Custom Flow</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-custom-panel" role="region" aria-labelledby="pattern-custom-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">The&nbsp;core flows of&nbsp;a&nbsp;product, built around its own rules and&nbsp;data.</p>
+                  <p class="row-desc" data-i18n="art.the-core-flows-of-a">The&nbsp;core flows of&nbsp;a&nbsp;product, built around its own rules and&nbsp;data.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>Work&nbsp;tools</h4>
+                      <h4 data-i18n="art.work-tools">Work&nbsp;tools</h4>
                       <ul>
-                        <li>Dashboards</li>
-                        <li>Help&nbsp;desks</li>
-                        <li>Task&nbsp;trackers</li>
-                        <li>CRM and&nbsp;ERP</li>
-                        <li>Learning platforms&nbsp;(LMS)</li>
+                        <li data-i18n="art.dashboards">Dashboards</li>
+                        <li data-i18n="art.help-desks">Help&nbsp;desks</li>
+                        <li data-i18n="art.task-trackers">Task&nbsp;trackers</li>
+                        <li data-i18n="art.crm-and-erp">CRM and&nbsp;ERP</li>
+                        <li data-i18n="art.learning-platforms-lms">Learning platforms&nbsp;(LMS)</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Services</h4>
+                      <h4 data-i18n="art.online-services">Online&nbsp;services</h4>
                       <ul>
-                        <li>Booking: calendars, reservations,&nbsp;tickets</li>
-                        <li>Ad&nbsp;platforms</li>
-                        <li>Fintech and&nbsp;banking</li>
+                        <li data-i18n="art.booking-calendars-reservations-tickets">Booking: calendars, reservations,&nbsp;tickets</li>
+                        <li data-i18n="art.ad-platforms">Ad&nbsp;platforms</li>
+                        <li data-i18n="art.fintech-and-banking">Fintech and&nbsp;banking</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Platforms</h4>
+                      <h4 data-i18n="art.platforms">Platforms</h4>
                       <ul>
-                        <li>Freelance&nbsp;marketplaces</li>
-                        <li>File&nbsp;storage</li>
-                        <li>Intranets</li>
+                        <li data-i18n="art.freelance-marketplaces">Freelance&nbsp;marketplaces</li>
+                        <li data-i18n="art.file-storage">File&nbsp;storage</li>
+                        <li data-i18n="art.intranets">Intranets</li>
                       </ul>
                     </div>
                   </div>
                   <hr>
-                  <p class="row-tip">Start with products of&nbsp;the&nbsp;same type. Then check which patterns from this list they contain: most custom flows still include a&nbsp;catalog, a&nbsp;detail page or&nbsp;a&nbsp;form.</p>
+                  <p class="row-tip" data-i18n="art.start-with-products-of-the">Start with products of&nbsp;the&nbsp;same type. Then check which patterns from this list they contain: most custom flows still include a&nbsp;catalog, a&nbsp;detail page or&nbsp;a&nbsp;form.</p>
                 </div>
               </div>
             </div>
@@ -1011,50 +1067,50 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-business-head" aria-expanded="true" aria-controls="pattern-business-panel">
                 <img src="/assets/writing/patterns/luggage.svg" width="24" height="24" alt="">
-                <span class="row-title">Business-specific flows</span>
+                <span class="row-title" data-i18n="art.business-specific-flows">Business-specific flows</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-business-panel" role="region" aria-labelledby="pattern-business-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">Product types with conventions that users already&nbsp;know.</p>
+                  <p class="row-desc" data-i18n="art.product-types-with-conventions-that">Product types with conventions that users already&nbsp;know.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>Communication</h4>
+                      <h4 data-i18n="art.communication">Communication</h4>
                       <ul>
-                        <li>Messaging&nbsp;apps</li>
-                        <li>Social&nbsp;networks</li>
-                        <li>Dating&nbsp;apps</li>
+                        <li data-i18n="art.messaging-apps">Messaging&nbsp;apps</li>
+                        <li data-i18n="art.social-networks">Social&nbsp;networks</li>
+                        <li data-i18n="art.dating-apps">Dating&nbsp;apps</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Maps and&nbsp;transport</h4>
+                      <h4 data-i18n="art.maps-and-transport">Maps and&nbsp;transport</h4>
                       <ul>
-                        <li>Maps and&nbsp;navigation</li>
-                        <li>Taxi and&nbsp;car&nbsp;sharing</li>
-                        <li>Logistics and&nbsp;routing</li>
+                        <li data-i18n="art.maps-and-navigation">Maps and&nbsp;navigation</li>
+                        <li data-i18n="art.taxi-and-car-sharing">Taxi and&nbsp;car&nbsp;sharing</li>
+                        <li data-i18n="art.logistics-and-routing">Logistics and&nbsp;routing</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Media and&nbsp;games</h4>
+                      <h4 data-i18n="art.media-and-games">Media and&nbsp;games</h4>
                       <ul>
-                        <li>Photo and&nbsp;video&nbsp;editors</li>
-                        <li>Video and&nbsp;music&nbsp;players</li>
-                        <li>Games</li>
-                        <li>Betting and&nbsp;casino&nbsp;apps</li>
+                        <li data-i18n="art.photo-and-video-editors">Photo and&nbsp;video&nbsp;editors</li>
+                        <li data-i18n="art.video-and-music-players">Video and&nbsp;music&nbsp;players</li>
+                        <li data-i18n="art.games">Games</li>
+                        <li data-i18n="art.betting-and-casino-apps">Betting and&nbsp;casino&nbsp;apps</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Trading</h4>
+                      <h4 data-i18n="art.trading">Trading</h4>
                       <ul>
-                        <li>Stock and&nbsp;crypto&nbsp;exchanges</li>
+                        <li data-i18n="art.stock-and-crypto-exchanges">Stock and&nbsp;crypto&nbsp;exchanges</li>
                       </ul>
                     </div>
                   </div>
                   <hr>
-                  <p class="row-tip">Users learned these products from the&nbsp;market leaders and&nbsp;expect yours to&nbsp;work the&nbsp;same way. Start with direct&nbsp;competitors.</p>
+                  <p class="row-tip" data-i18n="art.users-learned-these-products-from">Users learned these products from the&nbsp;market leaders and&nbsp;expect yours to&nbsp;work the&nbsp;same way. Start with direct&nbsp;competitors.</p>
                 </div>
               </div>
             </div>
@@ -1063,42 +1119,42 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-cart-head" aria-expanded="true" aria-controls="pattern-cart-panel">
                 <img src="/assets/writing/patterns/cart.svg" width="24" height="24" alt="">
-                <span class="row-title">Cart</span>
+                <span class="row-title" data-i18n="art.cart">Cart</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-cart-panel" role="region" aria-labelledby="pattern-cart-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">A&nbsp;place to&nbsp;collect items, review and&nbsp;change them, then confirm them all at&nbsp;once.</p>
+                  <p class="row-desc" data-i18n="art.a-place-to-collect-items">A&nbsp;place to&nbsp;collect items, review and&nbsp;change them, then confirm them all at&nbsp;once.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>Before&nbsp;checkout</h4>
+                      <h4 data-i18n="art.before-checkout">Before&nbsp;checkout</h4>
                       <ul>
-                        <li>Mini&nbsp;cart</li>
-                        <li>Cart&nbsp;page</li>
+                        <li data-i18n="art.mini-cart">Mini&nbsp;cart</li>
+                        <li data-i18n="art.cart-page">Cart&nbsp;page</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Checkout</h4>
+                      <h4 data-i18n="art.checkout">Checkout</h4>
                       <ul>
-                        <li>Checkout&nbsp;page</li>
-                        <li>Add-ons: insurance, carry-in&nbsp;service</li>
-                        <li>Delivery: pickup point or&nbsp;courier</li>
-                        <li><button class="row-link" type="button" data-open="pattern-authentication">Authentication</button></li>
+                        <li data-i18n="art.checkout-page">Checkout&nbsp;page</li>
+                        <li data-i18n="art.add-ons-insurance-carry-in">Add-ons: insurance, carry-in&nbsp;service</li>
+                        <li data-i18n="art.delivery-pickup-point-or-courier">Delivery: pickup point or&nbsp;courier</li>
+                        <li><button class="row-link" type="button" data-open="pattern-authentication" data-i18n="art.authentication">Authentication</button></li>
                       </ul>
                     </div>
                   </div>
                   <hr>
                   <div class="row-used">
-                    <h4>Also used&nbsp;in</h4>
+                    <h4 data-i18n="art.also-used-in">Also used&nbsp;in</h4>
                     <ul class="chips">
-                      <li>Trip booking: flight, hotel,&nbsp;transfer</li>
-                      <li>Quote request&nbsp;(B2B)</li>
-                      <li>Repeat grocery&nbsp;order</li>
-                      <li>Bundle&nbsp;builder</li>
-                      <li>Bulk file&nbsp;actions</li>
+                      <li data-i18n="art.trip-booking-flight-hotel-transfer">Trip booking: flight, hotel,&nbsp;transfer</li>
+                      <li data-i18n="art.quote-request-b2b">Quote request&nbsp;(B2B)</li>
+                      <li data-i18n="art.repeat-grocery-order">Repeat grocery&nbsp;order</li>
+                      <li data-i18n="art.bundle-builder">Bundle&nbsp;builder</li>
+                      <li data-i18n="art.bulk-file-actions">Bulk file&nbsp;actions</li>
                     </ul>
                   </div>
                 </div>
@@ -1109,42 +1165,42 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-payment-head" aria-expanded="true" aria-controls="pattern-payment-panel">
                 <img src="/assets/writing/patterns/creditcard.svg" width="24" height="24" alt="">
-                <span class="row-title">Payment</span>
+                <span class="row-title" data-i18n="art.payment">Payment</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-payment-panel" role="region" aria-labelledby="pattern-payment-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">Choosing a&nbsp;payment method, confirming the&nbsp;amount and&nbsp;seeing a&nbsp;clear&nbsp;result.</p>
+                  <p class="row-desc" data-i18n="art.choosing-a-payment-method-confirming">Choosing a&nbsp;payment method, confirming the&nbsp;amount and&nbsp;seeing a&nbsp;clear&nbsp;result.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>Payment&nbsp;method</h4>
+                      <h4 data-i18n="art.payment-method">Payment&nbsp;method</h4>
                       <ul>
-                        <li>New or&nbsp;saved&nbsp;card</li>
-                        <li>Pay later: credit or&nbsp;installments</li>
-                        <li>Local payment&nbsp;methods</li>
+                        <li data-i18n="art.new-or-saved-card">New or&nbsp;saved&nbsp;card</li>
+                        <li data-i18n="art.pay-later-credit-or-installments">Pay later: credit or&nbsp;installments</li>
+                        <li data-i18n="art.local-payment-methods">Local payment&nbsp;methods</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Steps</h4>
+                      <h4 data-i18n="art.steps">Steps</h4>
                       <ul>
-                        <li>Entering payment&nbsp;details</li>
-                        <li>Payment result: success or&nbsp;failure</li>
+                        <li data-i18n="art.entering-payment-details">Entering payment&nbsp;details</li>
+                        <li data-i18n="art.payment-result-success-or-failure">Payment result: success or&nbsp;failure</li>
                       </ul>
                     </div>
                   </div>
                   <hr>
                   <div class="row-used">
-                    <h4>Also used&nbsp;in</h4>
+                    <h4 data-i18n="art.also-used-in">Also used&nbsp;in</h4>
                     <ul class="chips">
-                      <li>Subscriptions</li>
-                      <li>In-app&nbsp;purchases</li>
-                      <li>Wallet&nbsp;top-ups</li>
-                      <li>Utility&nbsp;bills</li>
-                      <li>Money&nbsp;transfers</li>
-                      <li>Invoices and&nbsp;payment&nbsp;links</li>
+                      <li data-i18n="art.subscriptions">Subscriptions</li>
+                      <li data-i18n="art.in-app-purchases">In-app&nbsp;purchases</li>
+                      <li data-i18n="art.wallet-top-ups">Wallet&nbsp;top-ups</li>
+                      <li data-i18n="art.utility-bills">Utility&nbsp;bills</li>
+                      <li data-i18n="art.money-transfers">Money&nbsp;transfers</li>
+                      <li data-i18n="art.invoices-and-payment-links">Invoices and&nbsp;payment&nbsp;links</li>
                     </ul>
                   </div>
                 </div>
@@ -1155,48 +1211,48 @@
             <h3 class="row-h">
               <button class="row-head" type="button" id="pattern-account-head" aria-expanded="true" aria-controls="pattern-account-panel">
                 <img src="/assets/writing/patterns/usercircle.svg" width="24" height="24" alt="">
-                <span class="row-title">Account</span>
+                <span class="row-title" data-i18n="art.account">Account</span>
                 <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
               </button>
             </h3>
             <div class="row-panel" id="pattern-account-panel" role="region" aria-labelledby="pattern-account-head">
               <div class="row-clip">
                 <div class="row-body">
-                  <p class="row-desc">A&nbsp;user’s personal space for&nbsp;profile, security, billing and&nbsp;preferences.</p>
+                  <p class="row-desc" data-i18n="art.a-user-s-personal-space">A&nbsp;user’s personal space for&nbsp;profile, security, billing and&nbsp;preferences.</p>
                   <hr>
                   <div class="row-groups">
                     <div>
-                      <h4>Personal</h4>
+                      <h4 data-i18n="art.personal">Personal</h4>
                       <ul>
-                        <li>Profile</li>
-                        <li>Order&nbsp;history</li>
-                        <li>Favorites</li>
+                        <li data-i18n="art.profile">Profile</li>
+                        <li data-i18n="art.order-history">Order&nbsp;history</li>
+                        <li data-i18n="art.favorites">Favorites</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Loyalty</h4>
+                      <h4 data-i18n="art.loyalty">Loyalty</h4>
                       <ul>
-                        <li>Wallet and&nbsp;balance</li>
-                        <li>Bonus points and&nbsp;loyalty&nbsp;cards</li>
-                        <li>Gift cards and&nbsp;member&nbsp;status</li>
+                        <li data-i18n="art.wallet-and-balance">Wallet and&nbsp;balance</li>
+                        <li data-i18n="art.bonus-points-and-loyalty-cards">Bonus points and&nbsp;loyalty&nbsp;cards</li>
+                        <li data-i18n="art.gift-cards-and-member-status">Gift cards and&nbsp;member&nbsp;status</li>
                       </ul>
                     </div>
                     <div>
-                      <h4>Preferences and&nbsp;help</h4>
+                      <h4 data-i18n="art.preferences-and-help">Preferences and&nbsp;help</h4>
                       <ul>
-                        <li>Settings</li>
-                        <li>Notifications</li>
-                        <li>Support&nbsp;requests</li>
+                        <li data-i18n="art.settings">Settings</li>
+                        <li data-i18n="art.notifications">Notifications</li>
+                        <li data-i18n="art.support-requests">Support&nbsp;requests</li>
                       </ul>
                     </div>
                   </div>
                   <hr>
                   <div class="row-used">
-                    <h4>Also used&nbsp;in</h4>
+                    <h4 data-i18n="art.also-used-in">Also used&nbsp;in</h4>
                     <ul class="chips">
-                      <li>SaaS workspace: billing,&nbsp;team</li>
-                      <li>Store account: orders,&nbsp;addresses</li>
-                      <li>Public profile: author,&nbsp;seller</li>
+                      <li data-i18n="art.saas-workspace-billing-team">SaaS workspace: billing,&nbsp;team</li>
+                      <li data-i18n="art.store-account-orders-addresses">Store account: orders,&nbsp;addresses</li>
+                      <li data-i18n="art.public-profile-author-seller">Public profile: author,&nbsp;seller</li>
                     </ul>
                   </div>
                 </div>
@@ -1243,84 +1299,84 @@
         </script>
 
         <div class="text">
-          <p>A&nbsp;catalog is&nbsp;needed where people don’t know exactly what they’re looking for: they narrow the&nbsp;selection step by&nbsp;step until they reach the&nbsp;right item. If&nbsp;they know the&nbsp;name, search is&nbsp;enough.</p>
-          <p><strong>Example.</strong> We’re designing a&nbsp;trip planning app. A&nbsp;tourist doesn’t know what the&nbsp;city offers, so&nbsp;the&nbsp;list of&nbsp;places is&nbsp;a&nbsp;catalog. A&nbsp;place page with photos and&nbsp;opening hours is&nbsp;a&nbsp;detail page. The&nbsp;places added to&nbsp;the&nbsp;trip work like a&nbsp;cart. Now references can come from online stores and&nbsp;booking services, not only from other travel&nbsp;apps.</p>
-          <p><strong>Exception.</strong> In&nbsp;niches with complex business logic (geo services, social networks, messengers) abstraction helps less. There you look for&nbsp;proven solutions from direct analogs: the&nbsp;systems are too complex to&nbsp;invent the&nbsp;connections from&nbsp;scratch.</p>
-          <p>Behind this is&nbsp;<strong>Jakob’s Law</strong>: people spend most of&nbsp;their time in&nbsp;other products and&nbsp;expect yours to&nbsp;work the&nbsp;same way. Structure, behavior and&nbsp;controls should feel familiar; your own visual style doesn’t get in&nbsp;the&nbsp;way of&nbsp;that.</p>
+          <p data-i18n="art.a-catalog-is-needed-where">A&nbsp;catalog is&nbsp;needed where people don’t know exactly what they’re looking for: they narrow the&nbsp;selection step by&nbsp;step until they reach the&nbsp;right item. If&nbsp;they know the&nbsp;name, search is&nbsp;enough.</p>
+          <p data-i18n="art.example-we-re-designing-a"><strong>Example.</strong> We’re designing a&nbsp;trip planning app. A&nbsp;tourist doesn’t know what the&nbsp;city offers, so&nbsp;the&nbsp;list of&nbsp;places is&nbsp;a&nbsp;catalog. A&nbsp;place page with photos and&nbsp;opening hours is&nbsp;a&nbsp;detail page. The&nbsp;places added to&nbsp;the&nbsp;trip work like a&nbsp;cart. Now references can come from online stores and&nbsp;booking services, not only from other travel&nbsp;apps.</p>
+          <p data-i18n="art.exception-in-niches-with-complex"><strong>Exception.</strong> In&nbsp;niches with complex business logic (geo services, social networks, messengers) abstraction helps less. There you look for&nbsp;proven solutions from direct analogs: the&nbsp;systems are too complex to&nbsp;invent the&nbsp;connections from&nbsp;scratch.</p>
+          <p data-i18n="art.behind-this-is-jakob-s">Behind this is&nbsp;<strong>Jakob’s Law</strong>: people spend most of&nbsp;their time in&nbsp;other products and&nbsp;expect yours to&nbsp;work the&nbsp;same way. Structure, behavior and&nbsp;controls should feel familiar; your own visual style doesn’t get in&nbsp;the&nbsp;way of&nbsp;that.</p>
         </div>
       </section>
 
       <!-- ===== Collect ===== -->
       <section id="collect">
         <div class="text">
-          <h2>Collect everything that catches your&nbsp;eye</h2>
-          <p>Save everything you like and&nbsp;don’t judge it&nbsp;yet. Filter too early and&nbsp;you miss an&nbsp;unexpected find from another&nbsp;niche.</p>
-          <p>Combine sources. Walk through the&nbsp;flows yourself to&nbsp;see errors, emails and&nbsp;what happens on&nbsp;return. Use screen libraries like Mobbin to&nbsp;compare one pattern across dozens of&nbsp;products. Check usability research from Baymard Institute and&nbsp;Nielsen Norman&nbsp;Group.</p>
-          <p>Label each screen right away: product, step,&nbsp;pattern.</p>
+          <h2 data-i18n="art.collect-everything-that-catches-your">Collect everything that catches your&nbsp;eye</h2>
+          <p data-i18n="art.save-everything-you-like-and">Save everything you like and&nbsp;don’t judge it&nbsp;yet. Filter too early and&nbsp;you miss an&nbsp;unexpected find from another&nbsp;niche.</p>
+          <p data-i18n="art.combine-sources-walk-through-the">Combine sources. Walk through the&nbsp;flows yourself to&nbsp;see errors, emails and&nbsp;what happens on&nbsp;return. Use screen libraries like Mobbin to&nbsp;compare one pattern across dozens of&nbsp;products. Check usability research from Baymard Institute and&nbsp;Nielsen Norman&nbsp;Group.</p>
+          <p data-i18n="art.label-each-screen-right-away">Label each screen right away: product, step,&nbsp;pattern.</p>
         </div>
       </section>
 
       <!-- ===== Analyze ===== -->
       <section id="analyze">
         <div class="text">
-          <h2>Analyze what you&nbsp;collected</h2>
-          <p>A&nbsp;reference without a&nbsp;note is&nbsp;just a&nbsp;picture. For&nbsp;each one, write down what fits your task, what doesn’t and&nbsp;why.</p>
-          <p>Ask three questions: which user and&nbsp;business task does it&nbsp;solve, what happens before and&nbsp;after it,&nbsp;and&nbsp;is&nbsp;it&nbsp;made for&nbsp;an&nbsp;audience like&nbsp;yours?</p>
-          <p>Compare flows by&nbsp;the&nbsp;same criteria in&nbsp;a&nbsp;product&nbsp;×&nbsp;criterion table. What everyone shares is&nbsp;the&nbsp;market norm. Where solutions differ is&nbsp;room for&nbsp;your own&nbsp;hypotheses.</p>
+          <h2 data-i18n="art.analyze-what-you-collected">Analyze what you&nbsp;collected</h2>
+          <p data-i18n="art.a-reference-without-a-note">A&nbsp;reference without a&nbsp;note is&nbsp;just a&nbsp;picture. For&nbsp;each one, write down what fits your task, what doesn’t and&nbsp;why.</p>
+          <p data-i18n="art.ask-three-questions-which-user">Ask three questions: which user and&nbsp;business task does it&nbsp;solve, what happens before and&nbsp;after it,&nbsp;and&nbsp;is&nbsp;it&nbsp;made for&nbsp;an&nbsp;audience like&nbsp;yours?</p>
+          <p data-i18n="art.compare-flows-by-the-same">Compare flows by&nbsp;the&nbsp;same criteria in&nbsp;a&nbsp;product&nbsp;×&nbsp;criterion table. What everyone shares is&nbsp;the&nbsp;market norm. Where solutions differ is&nbsp;room for&nbsp;your own&nbsp;hypotheses.</p>
         </div>
       </section>
 
       <!-- ===== Cut ===== -->
       <section id="cut">
         <div class="text">
-          <h2>Cut what you don’t&nbsp;need</h2>
-          <p>Run what you’ve collected through two&nbsp;filters.</p>
-          <p><strong>Constraints.</strong> Remove what doesn’t fit the&nbsp;technical, legal and&nbsp;resource limits, however well it&nbsp;works for&nbsp;others.</p>
-          <p><strong>Value and&nbsp;cost.</strong> Weigh how much a&nbsp;solution helps the&nbsp;user against what it&nbsp;costs to&nbsp;build. A&nbsp;large feature with no&nbsp;clear value is&nbsp;the&nbsp;first to&nbsp;go.</p>
+          <h2 data-i18n="art.cut-what-you-don-t">Cut what you don’t&nbsp;need</h2>
+          <p data-i18n="art.run-what-you-ve-collected">Run what you’ve collected through two&nbsp;filters.</p>
+          <p data-i18n="art.constraints-remove-what-doesn-t"><strong>Constraints.</strong> Remove what doesn’t fit the&nbsp;technical, legal and&nbsp;resource limits, however well it&nbsp;works for&nbsp;others.</p>
+          <p data-i18n="art.value-and-cost-weigh-how"><strong>Value and&nbsp;cost.</strong> Weigh how much a&nbsp;solution helps the&nbsp;user against what it&nbsp;costs to&nbsp;build. A&nbsp;large feature with no&nbsp;clear value is&nbsp;the&nbsp;first to&nbsp;go.</p>
         </div>
       </section>
 
       <!-- ===== Team check ===== -->
       <section id="team-check">
         <div class="text">
-          <h2>Check your conclusions with the&nbsp;team</h2>
-          <p>One person’s selection stays a&nbsp;hypothesis until others have seen it. Show the&nbsp;analysis to&nbsp;the&nbsp;product manager, the&nbsp;developers and&nbsp;the&nbsp;client: they know priorities and&nbsp;constraints you may&nbsp;not.</p>
-          <p>Benchmarks don’t prove a&nbsp;solution will work for&nbsp;you. The&nbsp;final check is&nbsp;user testing and&nbsp;analytics after&nbsp;launch.</p>
+          <h2 data-i18n="art.check-your-conclusions-with-the">Check your conclusions with the&nbsp;team</h2>
+          <p data-i18n="art.one-person-s-selection-stays">One person’s selection stays a&nbsp;hypothesis until others have seen it. Show the&nbsp;analysis to&nbsp;the&nbsp;product manager, the&nbsp;developers and&nbsp;the&nbsp;client: they know priorities and&nbsp;constraints you may&nbsp;not.</p>
+          <p data-i18n="art.benchmarks-don-t-prove-a">Benchmarks don’t prove a&nbsp;solution will work for&nbsp;you. The&nbsp;final check is&nbsp;user testing and&nbsp;analytics after&nbsp;launch.</p>
         </div>
       </section>
 
       <!-- ===== Result ===== -->
       <section id="result">
         <div class="text">
-          <h2>What you end up&nbsp;with</h2>
-          <p>A&nbsp;list of&nbsp;the&nbsp;patterns the&nbsp;task is&nbsp;made of,&nbsp;a&nbsp;product&nbsp;×&nbsp;criterion table, annotated references (what you take, what you rejected and&nbsp;why) and&nbsp;a&nbsp;list of&nbsp;questions nobody asked when the&nbsp;task was first&nbsp;discussed.</p>
+          <h2 data-i18n="art.what-you-end-up-with">What you end up&nbsp;with</h2>
+          <p data-i18n="art.a-list-of-the-patterns">A&nbsp;list of&nbsp;the&nbsp;patterns the&nbsp;task is&nbsp;made of,&nbsp;a&nbsp;product&nbsp;×&nbsp;criterion table, annotated references (what you take, what you rejected and&nbsp;why) and&nbsp;a&nbsp;list of&nbsp;questions nobody asked when the&nbsp;task was first&nbsp;discussed.</p>
         </div>
       </section>
 
       <!-- ===== Mobbin and Claude ===== -->
       <section id="mobbin-claude">
         <div class="text">
-          <h2>Doing it&nbsp;faster with Mobbin and&nbsp;Claude</h2>
-          <p>Mobbin has an&nbsp;MCP server, so&nbsp;Claude can search its library of&nbsp;real screens and&nbsp;flows for&nbsp;me. I&nbsp;describe the&nbsp;task, send a&nbsp;screenshot or&nbsp;attach a&nbsp;brief, and&nbsp;get examples from other products with links back to&nbsp;Mobbin.</p>
+          <h2 data-i18n="art.doing-it-faster-with-mobbin">Doing it&nbsp;faster with Mobbin and&nbsp;Claude</h2>
+          <p data-i18n="art.mobbin-has-an-mcp-server">Mobbin has an&nbsp;MCP server, so&nbsp;Claude can search its library of&nbsp;real screens and&nbsp;flows for&nbsp;me. I&nbsp;describe the&nbsp;task, send a&nbsp;screenshot or&nbsp;attach a&nbsp;brief, and&nbsp;get examples from other products with links back to&nbsp;Mobbin.</p>
         </div>
 
         <figure class="shot">
-          <img src="/assets/writing/mobbin-connector.png" width="750" height="517" alt="The Mobbin connector page in Claude: connected, with the tools search_flows, search_screens and search_sections" loading="lazy">
+          <img src="/assets/writing/mobbin-connector.png" width="750" height="517" alt="The Mobbin connector page in Claude: connected, with the tools search_flows, search_screens and search_sections" data-i18n-attrs="alt:art.shot.alt" loading="lazy">
         </figure>
 
         <div class="text">
-          <p>To&nbsp;keep every search in&nbsp;the&nbsp;order of&nbsp;this guide, I&nbsp;packed the&nbsp;steps into a&nbsp;Claude skill. It&nbsp;turns a&nbsp;task into search queries, checks each result against one criterion and&nbsp;says what it&nbsp;did not&nbsp;find.</p>
-          <p>It&nbsp;speeds up&nbsp;collecting, not thinking. Notes, comparison and&nbsp;cuts are still my&nbsp;job.</p>
+          <p data-i18n="art.to-keep-every-search-in">To&nbsp;keep every search in&nbsp;the&nbsp;order of&nbsp;this guide, I&nbsp;packed the&nbsp;steps into a&nbsp;Claude skill. It&nbsp;turns a&nbsp;task into search queries, checks each result against one criterion and&nbsp;says what it&nbsp;did not&nbsp;find.</p>
+          <p data-i18n="art.it-speeds-up-collecting-not">It&nbsp;speeds up&nbsp;collecting, not thinking. Notes, comparison and&nbsp;cuts are still my&nbsp;job.</p>
         </div>
 
         <div class="skill-group">
-        <div class="skill" id="skill">
+        <div class="skill" id="skill" data-collapse="Collapse" data-copied="Copied" data-selected="Selected" data-status-copied="SKILL.md copied" data-status-selected="Text selected, copy it with the keyboard" data-i18n-attrs="data-collapse:art.skill.collapse data-copied:art.skill.copied data-selected:art.skill.selected data-status-copied:art.skill.status-copied data-status-selected:art.skill.status-selected">
           <div class="skill-head">
             <h3 class="skill-name">SKILL.md</h3>
-            <button class="skill-btn" type="button" id="skill-copy">Copy</button>
-            <a class="skill-btn" href="/assets/writing/reference-benchmarking.zip" download>Download ZIP</a>
+            <button class="skill-btn" type="button" id="skill-copy" data-i18n="art.copy">Copy</button>
+            <a class="skill-btn" href="/assets/writing/reference-benchmarking.zip" download data-i18n="art.download-zip">Download ZIP</a>
           </div>
-          <div class="skill-code" id="skill-code" role="region" aria-label="Contents of SKILL.md" tabindex="0">
+          <div class="skill-code" id="skill-code" role="region" aria-label="Contents of SKILL.md" data-i18n-attrs="aria-label:art.skill.region" tabindex="0">
             <pre><code>---
 name: reference-benchmarking
 description: Finds UI references in Mobbin and benchmarks them for a design task. Use when the user asks for references or how other products solve a screen or flow, or sends a screenshot or a brief.
@@ -1549,10 +1605,10 @@ This applies at any scale.
 - Extract the logic and adapt it. Do not recommend copying a screen.
 - The conclusions are hypotheses until the team has seen them and users have tested the result.</code></pre>
           </div>
-          <button class="skill-more" type="button" id="skill-more" aria-expanded="false" aria-controls="skill-code" hidden>Show all 227 lines</button>
+          <button class="skill-more" type="button" id="skill-more" aria-expanded="false" aria-controls="skill-code" hidden data-i18n="art.show-all-227-lines">Show all 227 lines</button>
           <span class="sr-only" id="skill-status" role="status"></span>
         </div>
-        <p class="note">To&nbsp;use it,&nbsp;download the&nbsp;ZIP, upload it&nbsp;in&nbsp;Claude under Customize&nbsp;→ Skills and&nbsp;connect&nbsp;Mobbin.</p>
+        <p class="note" data-i18n="art.to-use-it-download-the">To&nbsp;use it,&nbsp;download the&nbsp;ZIP, upload it&nbsp;in&nbsp;Claude under Customize&nbsp;→ Skills and&nbsp;connect&nbsp;Mobbin.</p>
         </div>
         <script>
           /* Skill file: collapsed to an excerpt, "Show all" opens a scrollable view, "Copy" copies the whole file */
@@ -1563,6 +1619,7 @@ This applies at any scale.
             var copy = document.getElementById('skill-copy');
             var status = document.getElementById('skill-status');
             var label = more.textContent;
+            var copyLabel = copy.textContent;
 
             root.classList.add('is-ready');
             more.hidden = false;
@@ -1570,7 +1627,7 @@ This applies at any scale.
               var open = !root.classList.contains('is-open');
               root.classList.toggle('is-open', open);
               more.setAttribute('aria-expanded', String(open));
-              more.textContent = open ? 'Collapse' : label;
+              more.textContent = open ? root.getAttribute('data-collapse') : label;
               if (!open) code.scrollTop = 0;
             });
 
@@ -1578,10 +1635,10 @@ This applies at any scale.
             copy.addEventListener('click', function () {
               var text = code.querySelector('code').textContent + '\n';
               function done(ok) {
-                copy.textContent = ok ? 'Copied' : 'Selected';
-                status.textContent = ok ? 'SKILL.md copied' : 'Text selected, copy it with the keyboard';
+                copy.textContent = root.getAttribute(ok ? 'data-copied' : 'data-selected');
+                status.textContent = root.getAttribute(ok ? 'data-status-copied' : 'data-status-selected');
                 clearTimeout(timer);
-                timer = setTimeout(function () { copy.textContent = 'Copy'; status.textContent = ''; }, 2000);
+                timer = setTimeout(function () { copy.textContent = copyLabel; status.textContent = ''; }, 2000);
               }
               function select() {
                 var range = document.createRange();
@@ -1608,10 +1665,6 @@ This applies at any scale.
   <script>
     (function () {
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      /* "Back" returns to the Writings page in the language the reader came from */
-      var from = document.referrer.match(/^https?:\/\/[^/]+(\/(?:de|cs|ru)\/writing)\/?$/);
-      if (from && document.referrer.indexOf(location.origin) === 0) document.getElementById('back').href = from[1];
 
       /* Side menu: mark the section that is being read */
       var links = [].slice.call(document.querySelectorAll('#toc a'));
@@ -1666,5 +1719,6 @@ This applies at any scale.
       dots.forEach(function (d, n) { d.addEventListener('click', function () { go(n); }); });
     })();
   </script>
+<script src="/assets/lang-switcher.js" defer></script>
 </body>
 </html>

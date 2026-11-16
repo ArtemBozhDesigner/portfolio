@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title data-i18n="meta.article.title">Поиск референсов и немного о бенчмаркинге — Артём Шевляков</title>
+  <meta name="description" content="Гайд о том, как искать дизайн-референсы так, чтобы каждая находка отвечала на конкретный вопрос: тип сервиса, этап воронки, сценарий, паттерны, анализ и отсев." data-i18n-attrs="content:meta.article.description">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/lang-switcher.css">
+
+  <style>
+    /* ============ Tokens (from Figma) ============ */
+    :root {
+      color-scheme: light;
+
+      /* Color */
+      --bg-page: #fafafa;
+      --bg-surface: #ffffff;
+      --bg-chip: #f8f8f9;
+      --text-strong: #141516;
+      --text-body: #36383a;
+      --text-secondary: #5b5e61;
+      --text-meta: #74777a;
+      --text-funnel-sub: #9c9ea0;
+      --text-funnel-alt: #818487;
+      --accent: #4379d3;
+      --dot: #d1d2d3;
+
+      /* Type */
+      --font-body: "Inter Tight", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+      /* Layout: 846px column for visuals, 630px measure for text; the side menu is
+         156px in the frame and gets at least 176px so the Russian labels stay on one line */
+      --column: 846px;
+      --measure: 630px;
+      --edge: clamp(12px, 5.7vw, 80px);
+
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text-body);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 24px;
+      letter-spacing: 0.01em;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; letter-spacing: inherit; color: inherit; }
+    strong { font-weight: 500; }
+    :focus-visible { outline: 2px solid var(--text-strong); outline-offset: 3px; }
+
+    /* ============ Logo ============ */
+    .logo {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 15px);
+      left: var(--edge);
+      z-index: 11;
+      display: block;
+      width: 42px;
+      height: 32px;
+    }
+
+    /* ============ Layout ============
+       Side menu on the left, the column centered on the page */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(176px, 1fr) minmax(0, var(--column)) minmax(0, 1fr);
+      column-gap: 24px;
+      padding: 100px var(--edge) 96px;
+    }
+
+    /* ============ Side menu ============ */
+    .side {
+      position: sticky;
+      top: calc(env(safe-area-inset-top, 0px) + 32px);
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 24px;
+    }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-meta);
+      transition: color .15s;
+    }
+    .back::before {
+      content: "";
+      width: 20px;
+      height: 20px;
+      background: currentColor;
+      -webkit-mask: url(/assets/icons/arrow-left.svg) center / 20px 20px no-repeat;
+      mask: url(/assets/icons/arrow-left.svg) center / 20px 20px no-repeat;
+    }
+    .toc {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toc a {
+      display: block;
+      color: var(--text-meta);
+      transition: color .15s;
+    }
+    .toc a[aria-current] { color: var(--text-strong); }
+
+    /* ============ Article ============ */
+    .article {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+      min-width: 0;
+    }
+    .article > section {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 32px);
+    }
+    .text {
+      width: 100%;
+      max-width: var(--measure);
+      margin-inline: auto;
+    }
+    .article h1 {
+      font-weight: 500;
+      font-size: 32px;
+      line-height: 48px;
+      color: var(--text-strong);
+    }
+    .meta {
+      margin-top: 12px;
+      color: var(--text-meta);
+    }
+    .article h2 {
+      font-weight: 500;
+      font-size: 21px;
+      line-height: 28px;
+      color: var(--text-strong);
+      margin-bottom: 16px;
+    }
+    .text p { text-wrap: pretty; }
+    .text p + p { margin-top: 16px; }
+
+    /* ============ Funnel slider ============
+       Each slide is drawn on a 846 x 710 stage. --u is one stage pixel:
+       1px while the stage fits, smaller once the slider is narrower than the funnel */
+    .slider { container-type: inline-size; }
+    .slider-view {
+      --u: min(1px, calc(100cqw / 464));
+      position: relative;
+    }
+    .slides {
+      display: flex;
+      gap: 16px;
+      list-style: none;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      border-radius: clamp(20px, 3.8cqw, 32px);
+    }
+    .slides::-webkit-scrollbar { display: none; }
+    .slide {
+      position: relative;
+      flex: 0 0 100%;
+      height: calc(710 * var(--u));
+      overflow: hidden;
+      background: var(--bg-surface);
+      border-radius: inherit;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+    }
+    .f {
+      position: absolute;
+      top: calc(var(--y) * var(--u));
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: none;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .f-wrap {
+      width: calc(var(--w) * max(var(--u), 0.8px));
+      white-space: normal;
+    }
+    .f-shape {
+      width: calc(429 * var(--u));
+      height: calc(var(--h) * var(--u));
+    }
+    .f-sep {
+      width: calc(420 * var(--u));
+      height: calc(6 * var(--u));
+      background: var(--bg-surface);
+    }
+    .f-title {
+      font-weight: 500;
+      font-size: max(calc(24 * var(--u)), 18px);
+      line-height: 1.3333;
+      color: var(--text-strong);
+    }
+    .f-sub {
+      font-size: max(calc(15 * var(--u)), 12px);
+      line-height: 1.3333;
+      color: var(--text-funnel-sub);
+    }
+    .f-stage {
+      font-size: max(calc(17 * var(--u)), 13px);
+      line-height: 1.4118;
+      color: var(--text-body);
+    }
+    .f-stage--2 { color: var(--text-funnel-alt); }
+    .f-labels {
+      display: flex;
+      gap: calc(12 * var(--u));
+      list-style: none;
+      font-size: max(calc(15 * var(--u)), 12px);
+      line-height: 1.3333;
+      color: var(--accent);
+    }
+
+    .slider-btn {
+      position: absolute;
+      top: calc(355 * var(--u));
+      translate: 0 -50%;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      transition: background-color .15s, opacity .15s, scale .15s;
+    }
+    .slider-btn img { width: 20px; height: 20px; }
+    .slider-btn--prev { left: clamp(6px, 3.31cqw, 28px); }
+    .slider-btn--prev img { rotate: 180deg; }
+    .slider-btn--next { right: clamp(6px, 3.31cqw, 28px); }
+    .slider-btn:active { scale: 0.96; }
+    .slider-btn[disabled] { opacity: 0; pointer-events: none; }
+    @container (max-width: 520px) {
+      .slider-btn { width: 32px; height: 32px; }
+    }
+
+    /* 6px bars with a 24px tall hit area; the margins give back the padding
+       so the bars sit 36px below the slide, as in the frame */
+    .dots {
+      display: flex;
+      justify-content: center;
+      margin: 27px 0 -9px;
+    }
+    .dot {
+      padding: 9px 6px;
+      border: 0;
+      background: none;
+      cursor: pointer;
+    }
+    .dot::before {
+      content: "";
+      display: block;
+      width: 6px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--dot);
+      transition: width .2s, background-color .2s;
+    }
+    .dot[aria-current="true"]::before {
+      width: 36px;
+      background: var(--text-strong);
+    }
+
+    /* ============ Pattern map (accordion) ============
+       Rows are open in the markup; the script closes all but the first */
+    .patterns {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: var(--measure);
+      margin-inline: auto;
+    }
+    .row {
+      background: var(--bg-surface);
+      border-radius: 16px;
+    }
+    .row-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 12px 12px 18px;
+      border: 0;
+      border-radius: 16px;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    .row-head:focus-visible { outline-offset: -2px; }
+    .row-head > img { flex: none; }
+    .row-title {
+      flex: 1 0 0;
+      min-width: 0;
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 28px;
+      color: var(--text-body);
+    }
+    .row-toggle {
+      flex: none;
+      padding: 8px;
+      border-radius: 10px;
+      transition: background-color .15s;
+    }
+    .row-plus { display: none; }
+    .patterns.is-ready .row:not(.is-open) .row-plus { display: block; }
+    .patterns.is-ready .row:not(.is-open) .row-minus { display: none; }
+
+    .row-panel {
+      display: grid;
+      grid-template-rows: 1fr;
+    }
+    .patterns.is-animated .row-panel { transition: grid-template-rows .28s cubic-bezier(.2, .8, .2, 1); }
+    .patterns.is-ready .row:not(.is-open) .row-panel { grid-template-rows: 0fr; }
+    .row-clip {
+      min-height: 0;
+      overflow: hidden;
+    }
+    .row-body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 0 18px 32px 52px;
+    }
+    .row-desc,
+    .row-tip { color: var(--text-secondary); }
+    .row-body hr {
+      border: 0;
+      border-top: 1px solid var(--bg-chip);
+    }
+    .row-body h4 {
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--text-body);
+    }
+    .row-groups {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 12px;
+    }
+    .row-groups ul {
+      margin-top: 8px;
+      padding-left: 21px;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-secondary);
+    }
+    .row-groups li + li { margin-top: 2px; }
+    .row-link {
+      border: 0;
+      border-radius: 4px;
+      background: none;
+      color: var(--accent);
+      text-align: left;
+      cursor: pointer;
+    }
+    .row-singles {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      list-style: none;
+    }
+    .chips li {
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--bg-chip);
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-body);
+    }
+
+    /* ============ Skill file ============
+       Without the script the code area simply scrolls */
+    .skill-group {
+      width: 100%;
+      max-width: var(--measure);
+      margin-inline: auto;
+    }
+    .skill {
+      border-radius: 16px;
+      background: var(--bg-surface);
+    }
+    .skill-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 12px 12px 18px;
+      border-bottom: 1px solid var(--bg-chip);
+    }
+    .skill-name {
+      flex: 1 0 0;
+      min-width: 0;
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--text-body);
+      overflow-wrap: anywhere;
+    }
+    .skill-btn {
+      flex: none;
+      padding: 6px 12px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--bg-chip);
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-body);
+      cursor: pointer;
+      transition: background-color .15s;
+    }
+    .skill-code {
+      position: relative;
+      max-height: 316px;
+      overflow: auto;
+    }
+    .skill-code:focus-visible { outline-offset: -2px; }
+    .skill-code pre {
+      padding: 16px 18px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 20px;
+      letter-spacing: 0;
+      color: var(--text-body);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .skill.is-ready:not(.is-open) .skill-code { overflow: hidden; }
+    .skill.is-ready:not(.is-open) .skill-code::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 96px;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--bg-surface));
+      pointer-events: none;
+    }
+    .skill.is-open .skill-code { max-height: min(70vh, 640px); }
+    .skill-more {
+      display: block;
+      width: 100%;
+      padding: 12px 18px;
+      border: 0;
+      border-top: 1px solid var(--bg-chip);
+      border-radius: 0 0 16px 16px;
+      background: none;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-meta);
+      cursor: pointer;
+      transition: color .15s;
+    }
+    .skill-more:focus-visible { outline-offset: -2px; }
+    .note {
+      margin: 12px 18px 0;
+      text-wrap: pretty;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-meta);
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /* ============ Screenshot ============ */
+    .shot {
+      padding: min(48px, 5.67%);
+      border-radius: clamp(20px, 3.8vw, 32px);
+      background: var(--bg-surface);
+    }
+    .shot img { width: 100%; height: auto; }
+
+    /* ============ Hover (pointer devices only) ============ */
+    @media (hover: hover) {
+      .back:hover,
+      .toc a:hover { color: var(--text-strong); }
+      .slider-btn:hover { background: rgba(0, 0, 0, 0.1); }
+      .row-head:hover .row-toggle { background: var(--bg-page); }
+      .row-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+      .skill-btn:hover { background: #f0f0f1; }
+      .skill-more:hover { color: var(--text-strong); }
+    }
+
+    /* ============ Narrow screens: one column, the menu keeps only "Back" ============ */
+    @media (max-width: 959px) {
+      .layout {
+        display: block;
+        max-width: calc(720px + 48px);
+        margin-inline: auto;
+        padding: 72px 24px 80px;
+      }
+      .side {
+        position: static;
+        width: auto;
+        max-width: var(--measure);
+        margin: 0 auto 24px;
+      }
+      .toc { display: none; }
+      .lang { position: absolute; }
+    }
+    @media (max-width: 719px) {
+      .layout { padding: 68px 16px 64px; }
+      .article { gap: 40px; }
+      .article > section { gap: 28px; }
+      .article h1 { font-size: 26px; line-height: 34px; }
+      .article h2 { font-size: 20px; }
+      .dots { margin-top: 19px; }
+    }
+    @media (max-width: 479px) {
+      .row-body { padding: 0 18px 24px; }
+      .row-groups { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      html { scroll-behavior: smooth; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <a class="logo" href="/ru" aria-label="Артём Шевляков, главная" data-i18n-attrs="aria-label:logo.label"><img src="/assets/logo.svg" width="42" height="32" alt=""></a>
+
+  <!-- lang-switcher:start -->
+  <div class="lang" data-lang>
+    <button class="lang-button" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="Язык: Русский">
+      <span class="lang-globe" aria-hidden="true"></span>
+      <span class="lang-code" aria-hidden="true">RU</span>
+    </button>
+    <div class="lang-menu" id="lang-menu" hidden>
+      <a class="lang-item" href="/writing/references-and-benchmarks" hreflang="en" lang="en">English</a>
+      <a class="lang-item" href="/de/writing/references-and-benchmarks" hreflang="de" lang="de">Deutsch</a>
+      <a class="lang-item" href="/cs/writing/references-and-benchmarks" hreflang="cs" lang="cs">Čeština</a>
+      <a class="lang-item" href="/ru/writing/references-and-benchmarks" hreflang="ru" lang="ru" aria-current="true">Русский</a>
+    </div>
+  </div>
+  <!-- lang-switcher:end -->
+
+  <div class="layout">
+
+    <!-- ===== Side menu ===== -->
+    <nav class="side" aria-label="Статья" data-i18n-attrs="aria-label:art.nav.label">
+      <a class="back" id="back" href="/ru/writing" data-i18n="art.back">Назад</a>
+      <ol class="toc" id="toc">
+        <li><a href="#before-you-start" aria-current="location" data-i18n="art.before-you-start">Перед началом</a></li>
+        <li><a href="#service-type" data-i18n="art.service-type-funnel">Сервис и&nbsp;воронка</a></li>
+        <li><a href="#scenario" data-i18n="art.scenario-products">Сценарий и&nbsp;продукты</a></li>
+        <li><a href="#patterns" data-i18n="art.familiar-patterns">Знакомые паттерны</a></li>
+        <li><a href="#collect" data-i18n="art.collect-references">Сбор референсов</a></li>
+        <li><a href="#analyze" data-i18n="art.analyze-findings">Анализ находок</a></li>
+        <li><a href="#cut" data-i18n="art.cut-extras">Отсечь лишнее</a></li>
+        <li><a href="#team-check" data-i18n="art.team-check">Сверка с&nbsp;командой</a></li>
+        <li><a href="#result" data-i18n="art.end-result">Итоговый результат</a></li>
+        <li><a href="#mobbin-claude" data-i18n="art.mobbin-claude">Mobbin и&nbsp;Claude</a></li>
+      </ol>
+    </nav>
+
+    <main class="article">
+
+      <header class="text">
+        <h1 data-i18n="writing.note1.title">Поиск референсов и&nbsp;немного о&nbsp;бенчмаркинге</h1>
+        <p class="meta" data-i18n="art.5-min-read">5 минут&nbsp;чтения</p>
+      </header>
+
+      <div class="text">
+        <p data-i18n="art.everyone-collects-references-but-too">Референсы собирают все, но&nbsp;слишком часто дело заканчивается папкой красивых экранов, которая никак не&nbsp;помогает решить задачу. В&nbsp;этом гайде я&nbsp;покажу другой способ поиска: такой, где каждая находка отвечает на&nbsp;конкретный&nbsp;вопрос.</p>
+        <p data-i18n="art.a-reference-is-a-single"><strong>Референс</strong>&nbsp;— это отдельный пример чужого решения: экран, флоу или&nbsp;фрагмент текста. <strong>Бенчмаркинг</strong>&nbsp;— это процесс, в&nbsp;котором сравнивают, как&nbsp;разные продукты решают одну и&nbsp;ту&nbsp;же&nbsp;задачу, и&nbsp;выясняют, почему решение&nbsp;работает.</p>
+        <p data-i18n="art.what-matters-is-how-a">Важно, как&nbsp;решение работает, а&nbsp;не&nbsp;только как&nbsp;оно выглядит. Скопируете визуал&nbsp;— получите красивый экран. Разберётесь в&nbsp;логике&nbsp;— получите идею, которую можно адаптировать под&nbsp;свой&nbsp;продукт.</p>
+      </div>
+
+      <!-- ===== Before you start ===== -->
+      <section id="before-you-start">
+        <div class="text">
+          <h2 data-i18n="art.three-things-worth-knowing-before">Три вещи, которые стоит знать до&nbsp;начала</h2>
+          <p data-i18n="art.goal-the-outcome-the-user"><strong>Цель.</strong> Результат, который нужен пользователю и&nbsp;бизнесу.</p>
+          <p data-i18n="art.context-product-type-b2b-or"><strong>Контекст.</strong> Тип продукта, B2B или&nbsp;B2C, опыт аудитории,&nbsp;устройства.</p>
+          <p data-i18n="art.constraints-technical-legal-and-resource"><strong>Ограничения.</strong> Технические, юридические и&nbsp;ресурсные рамки, а&nbsp;также ожидания клиента. Они не&nbsp;дают искать невозможное, а&nbsp;позже помогают отфильтровать&nbsp;собранное.</p>
+        </div>
+      </section>
+
+      <!-- ===== Service type and funnel ===== -->
+      <section id="service-type">
+        <div class="text">
+          <h2 data-i18n="art.identify-the-service-type-and">Определите тип сервиса и&nbsp;этап&nbsp;воронки</h2>
+          <p data-i18n="art.the-service-type-and-the">Тип сервиса и&nbsp;этап воронки определяют цель экрана, а&nbsp;значит, и&nbsp;то,&nbsp;какие продукты можно сравнивать. Онбординг в&nbsp;SaaS и&nbsp;чекаут в&nbsp;магазине решают разные задачи, даже если оба выглядят как&nbsp;многошаговая&nbsp;форма.</p>
+          <p data-i18n="art.below-i-ve-drawn-a">Ниже я&nbsp;нарисовал упрощённую воронку для&nbsp;каждого типа&nbsp;сервиса.</p>
+        </div>
+
+        <div class="slider" id="funnels" role="region" aria-roledescription="carousel" aria-label="Воронки по типам сервиса" data-i18n-attrs="aria-label:art.slider.label">
+          <div class="slider-view">
+            <ul class="slides" tabindex="0" aria-label="Слайды с воронками" data-i18n-attrs="aria-label:art.slider.slides">
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="1 из 3: SaaS" data-i18n-attrs="aria-label:art.slider.slide1">
+              <img class="f f-shape" src="/assets/writing/funnel.svg" width="429" height="454" alt="" style="--y:146;--h:454">
+              <span class="f f-sep" style="--y:222"></span>
+              <span class="f f-sep" style="--y:356"></span>
+              <span class="f f-sep" style="--y:490"></span>
+              <h3 class="f f-title" style="--y:60" data-i18n="art.saas">SaaS</h3>
+              <p class="f f-sub" style="--y:100" data-i18n="art.software-as-a-service-apps">ПО&nbsp;как&nbsp;услуга. Приложения и&nbsp;онлайн-сервисы</p>
+              <p class="f f-stage" style="--y:172" data-i18n="art.onboarding-activation">Онбординг,&nbsp;активация</p>
+              <p class="f f-stage" style="--y:254" data-i18n="art.usage-aha-moment">Использование&nbsp;→&nbsp;ага-момент</p>
+              <p class="f f-stage f-stage--2" style="--y:278" data-i18n="art.freemium-paywall-free-trial">Freemium&nbsp;→ Пейвол&nbsp;→ Пробный&nbsp;период</p>
+              <ul class="f f-labels" style="--y:310">
+                <li data-i18n="art.custom-flows-business-specific-logic">Кастомные флоу,&nbsp;бизнес-логика</li>
+              </ul>
+              <p class="f f-stage f-wrap" style="--y:388;--w:222" data-i18n="art.upgrade-to-a-paid-plan">Платный тариф, регулярный&nbsp;платёж</p>
+              <ul class="f f-labels" style="--y:444">
+                <li data-i18n="art.payment">Оплата</li>
+              </ul>
+              <p class="f f-stage" style="--y:522" data-i18n="art.retention-upsell">Удержание,&nbsp;допродажи</p>
+              <ul class="f f-labels" style="--y:554">
+                <li data-i18n="art.account">Личный&nbsp;кабинет</li>
+              </ul>
+              <p class="f f-stage" style="--y:626" data-i18n="art.subscription-renewal-upgrade">Продление подписки,&nbsp;апгрейд</p>
+            </li>
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="2 из 3: E-commerce" data-i18n-attrs="aria-label:art.slider.slide2">
+              <img class="f f-shape" src="/assets/writing/funnel.svg" width="429" height="454" alt="" style="--y:156;--h:454">
+              <span class="f f-sep" style="--y:260"></span>
+              <span class="f f-sep" style="--y:394"></span>
+              <span class="f f-sep" style="--y:504"></span>
+              <h3 class="f f-title" style="--y:50" data-i18n="art.e-commerce">E-commerce</h3>
+              <p class="f f-sub f-wrap" style="--y:90;--w:345" data-i18n="art.stores-and-any-services-with">Магазины и&nbsp;любые сервисы с&nbsp;каталогом и&nbsp;процессом выбора и&nbsp;покупки</p>
+              <p class="f f-stage" style="--y:182" data-i18n="art.finding-a-product-comparing-options">Поиск товара, сравнение&nbsp;вариантов</p>
+              <ul class="f f-labels" style="--y:214">
+                <li data-i18n="art.catalog">Каталог</li>
+              </ul>
+              <p class="f f-stage" style="--y:292" data-i18n="art.building-trust-in-the-product">Доверие к&nbsp;товару,<br>добавление в&nbsp;корзину</p>
+              <ul class="f f-labels" style="--y:348">
+                <li data-i18n="art.product-page">Страница&nbsp;товара</li>
+              </ul>
+              <p class="f f-stage" style="--y:426" data-i18n="art.checkout-and-payment">Оформление и&nbsp;оплата</p>
+              <ul class="f f-labels" style="--y:458">
+                <li data-i18n="art.cart">Корзина</li>
+                <li data-i18n="art.payment">Оплата</li>
+                <li data-i18n="art.identification">Идентификация</li>
+              </ul>
+              <p class="f f-stage" style="--y:532" data-i18n="art.delivery-and-pickup">Доставка и&nbsp;самовывоз</p>
+              <ul class="f f-labels" style="--y:564">
+                <li data-i18n="art.account">Личный&nbsp;кабинет</li>
+              </ul>
+              <p class="f f-stage" style="--y:636" data-i18n="art.repeat-purchases">Повторные&nbsp;покупки</p>
+            </li>
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="3 из 3: Услуги" data-i18n-attrs="aria-label:art.slider.slide3">
+              <img class="f f-shape" src="/assets/writing/funnel-tall.svg" width="429" height="482" alt="" style="--y:132;--h:482">
+              <span class="f f-sep" style="--y:236"></span>
+              <span class="f f-sep" style="--y:394"></span>
+              <span class="f f-sep" style="--y:504"></span>
+              <h3 class="f f-title" style="--y:46" data-i18n="art.services">Услуги</h3>
+              <p class="f f-sub" style="--y:86" data-i18n="art.informational-websites-that-sell-services">Информационные сайты, которые продают&nbsp;услуги</p>
+              <p class="f f-stage" style="--y:158" data-i18n="art.finding-a-service-studying-the">Поиск услуги, изучение&nbsp;условий</p>
+              <ul class="f f-labels" style="--y:190">
+                <li data-i18n="art.home">Главная</li>
+                <li data-i18n="art.catalog">Каталог</li>
+                <li data-i18n="art.portfolio">Портфолио</li>
+                <li data-i18n="art.pricing">Цены</li>
+                <li data-i18n="art.plans">Тарифы</li>
+              </ul>
+              <p class="f f-stage f-wrap" style="--y:268;--w:216" data-i18n="art.building-trust-in-the-company">Доверие к&nbsp;компании и&nbsp;услуге</p>
+              <ul class="f f-labels" style="--y:324">
+                <li data-i18n="art.about">О&nbsp;нас</li>
+                <li data-i18n="art.partners">Партнёры</li>
+                <li data-i18n="art.team">Команда</li>
+                <li data-i18n="art.careers">Вакансии</li>
+              </ul>
+              <ul class="f f-labels" style="--y:348">
+                <li data-i18n="art.press">Пресса</li>
+                <li data-i18n="art.blog">Блог</li>
+                <li data-i18n="art.detail-page">Детальная&nbsp;страница</li>
+              </ul>
+              <p class="f f-stage" style="--y:426" data-i18n="art.first-contact-first-payment">Первый контакт, первая&nbsp;оплата</p>
+              <ul class="f f-labels" style="--y:458">
+                <li data-i18n="art.cart">Корзина</li>
+                <li data-i18n="art.direction">Направление</li>
+                <li data-i18n="art.cta-section">CTA-секция</li>
+              </ul>
+              <p class="f f-stage" style="--y:536" data-i18n="art.service-delivery">Оказание&nbsp;услуги</p>
+              <ul class="f f-labels" style="--y:568">
+                <li data-i18n="art.account">Личный&nbsp;кабинет</li>
+              </ul>
+              <p class="f f-stage" style="--y:640" data-i18n="art.repeat-purchases">Повторные&nbsp;покупки</p>
+            </li>
+            </ul>
+            <button class="slider-btn slider-btn--prev" type="button" aria-label="Предыдущий слайд" data-i18n-attrs="aria-label:art.slider.prev" disabled><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
+            <button class="slider-btn slider-btn--next" type="button" aria-label="Следующий слайд" data-i18n-attrs="aria-label:art.slider.next"><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
+          </div>
+          <div class="dots">
+          <button class="dot" type="button" aria-label="Показать слайд 1: SaaS" data-i18n-attrs="aria-label:art.slider.dot1" aria-current="true"></button>
+          <button class="dot" type="button" aria-label="Показать слайд 2: E-commerce" data-i18n-attrs="aria-label:art.slider.dot2"></button>
+          <button class="dot" type="button" aria-label="Показать слайд 3: Услуги" data-i18n-attrs="aria-label:art.slider.dot3"></button>
+          </div>
+        </div>
+
+        <div class="text">
+          <p data-i18n="art.once-you-know-the-stage">Когда этап известен, вы&nbsp;перестаёте искать «референсы для&nbsp;финтеха» и&nbsp;начинаете искать «онбординг и&nbsp;активацию в&nbsp;SaaS». Круг подходящих продуктов выходит за&nbsp;пределы вашей отрасли, а&nbsp;сам поиск становится точнее: вы&nbsp;сравниваете решения одной и&nbsp;той же&nbsp;задачи.</p>
+        </div>
+      </section>
+
+      <!-- ===== Scenario and products ===== -->
+      <section id="scenario">
+        <div class="text">
+          <h2 data-i18n="art.describe-the-scenario-and-decide">Опишите сценарий и&nbsp;решите, чьи продукты&nbsp;смотреть</h2>
+          <p data-i18n="art.compare-scenarios-not-whole-products">Сравнивайте сценарии, а&nbsp;не&nbsp;продукты целиком. Сначала опишите свой сценарий без&nbsp;интерфейса: что&nbsp;пользователь хочет получить и&nbsp;какие шаги для&nbsp;этого&nbsp;нужны.</p>
+          <p data-i18n="art.then-look-for-products-that">Затем ищите продукты, которые уже решают эту задачу, двигаясь от&nbsp;близких к&nbsp;далёким:</p>
+          <p data-i18n="art.direct-competitors-the-same-product"><strong>Прямые конкуренты.</strong> Тот же&nbsp;продукт для&nbsp;той же&nbsp;аудитории.</p>
+          <p data-i18n="art.adjacent-products-the-same-category"><strong>Смежные продукты.</strong> Та&nbsp;же&nbsp;категория, другой ценовой сегмент или&nbsp;аудитория.</p>
+          <p data-i18n="art.neighboring-fields-the-same-mechanic"><strong>Соседние области.</strong> Та&nbsp;же&nbsp;механика в&nbsp;другой сфере: проверка документов есть в&nbsp;банках, каршеринге и&nbsp;аренде&nbsp;жилья.</p>
+          <p data-i18n="art.market-leaders-from-any-industry"><strong>Лидеры рынка.</strong> Из&nbsp;любой отрасли. Их&nbsp;решения обычно подкреплены&nbsp;исследованиями.</p>
+        </div>
+      </section>
+
+      <!-- ===== Patterns ===== -->
+      <section id="patterns">
+        <div class="text">
+          <h2 data-i18n="art.break-the-task-into-familiar">Разбейте задачу на&nbsp;знакомые&nbsp;паттерны</h2>
+          <p data-i18n="art.most-tasks-are-assembled-from">Большинство задач собирается из&nbsp;частей, которые уже много раз решали: каталог, детальная страница, корзина. Люди знают, как&nbsp;эти части работают в&nbsp;других продуктах, и&nbsp;ждут, что&nbsp;у&nbsp;вас будет так же&nbsp;(закон Якоба). Поэтому назовите паттерны в&nbsp;своей задаче и&nbsp;ищите референсы на&nbsp;каждый. Ниже&nbsp;— карта самых&nbsp;частых.</p>
+        </div>
+
+        <div class="patterns" id="pattern-map">
+          <div class="row" id="pattern-authentication">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-authentication-head" aria-expanded="true" aria-controls="pattern-authentication-panel">
+                <img src="/assets/writing/patterns/fingerprint.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.authentication">Аутентификация</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-authentication-panel" role="region" aria-labelledby="pattern-authentication-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.sign-up-sign-in-and">Регистрация, вход и&nbsp;проверки, которые подтверждают личность&nbsp;пользователя.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.signup">Регистрация</h4>
+                      <ul>
+                        <li data-i18n="art.via-socials">через&nbsp;соцсети</li>
+                        <li data-i18n="art.via-email">через&nbsp;email</li>
+                        <li data-i18n="art.via-phone">по&nbsp;телефону</li>
+                        <li data-i18n="art.specific-card-contract-number">особый случай: номер карты или&nbsp;договора</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.2fa">2FA</h4>
+                      <ul>
+                        <li data-i18n="art.via-email">через&nbsp;email</li>
+                        <li data-i18n="art.via-phone">по&nbsp;телефону</li>
+                        <li data-i18n="art.authenticator-apps">приложения-аутентификаторы</li>
+                        <li data-i18n="art.passcode">код-пароль</li>
+                        <li data-i18n="art.touch-id-face-id">Touch ID,&nbsp;Face&nbsp;ID</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="row-singles">
+                    <h4 data-i18n="art.consents-agreements">Согласия,&nbsp;соглашения</h4>
+                    <h4 data-i18n="art.login">Вход</h4>
+                    <h4 data-i18n="art.password-reset">Сброс&nbsp;пароля</h4>
+                    <h4 data-i18n="art.identity-verification-kyc">Верификация личности&nbsp;(KYC)</h4>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.kyc-also-used-in">Где ещё есть&nbsp;KYC</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.fintech-and-crypto">Финтех и&nbsp;крипто</li>
+                      <li data-i18n="art.online-betting">Онлайн-ставки</li>
+                      <li data-i18n="art.mobile-operators">Мобильные&nbsp;операторы</li>
+                      <li data-i18n="art.car-rental">Аренда&nbsp;авто</li>
+                      <li data-i18n="art.freelance-platforms">Фриланс-платформы</li>
+                      <li data-i18n="art.telehealth">Телемедицина</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-onboarding">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-onboarding-head" aria-expanded="true" aria-controls="pattern-onboarding-panel">
+                <img src="/assets/writing/patterns/rocket.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.onboarding-and-activation">Онбординг и&nbsp;активация</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-onboarding-panel" role="region" aria-labelledby="pattern-onboarding-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.the-first-run-experience-that">Первый запуск, который подводит нового пользователя к&nbsp;главной ценности&nbsp;продукта.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.first-screens">Первые&nbsp;экраны</h4>
+                      <ul>
+                        <li data-i18n="art.splash-screen">Сплэш-экран</li>
+                        <li data-i18n="art.welcome-screen">Приветственный&nbsp;экран</li>
+                        <li data-i18n="art.feature-carousel">Карусель с&nbsp;возможностями</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.new-account">Новый&nbsp;аккаунт</h4>
+                      <ul>
+                        <li><button class="row-link" type="button" data-open="pattern-authentication" data-i18n="art.authentication">Аутентификация</button></li>
+                        <li data-i18n="art.account-setup">Настройка&nbsp;аккаунта</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.guidance">Подсказки</h4>
+                      <ul>
+                        <li data-i18n="art.getting-started-guide">Гайд для&nbsp;старта</li>
+                        <li data-i18n="art.product-tour-with-tooltips">Тур по&nbsp;продукту с&nbsp;подсказками</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.activation-examples">Примеры&nbsp;активации</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.music-first-playlist">Музыка: первый&nbsp;плейлист</li>
+                      <li data-i18n="art.fitness-first-workout">Фитнес: первая&nbsp;тренировка</li>
+                      <li data-i18n="art.messaging-first-message">Мессенджер: первое&nbsp;сообщение</li>
+                      <li data-i18n="art.ride-hailing-first-ride">Такси: первая&nbsp;поездка</li>
+                      <li data-i18n="art.file-storage-first-shared-folder">Файловое хранилище: первая общая&nbsp;папка</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-catalog">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-catalog-head" aria-expanded="true" aria-controls="pattern-catalog-panel">
+                <img src="/assets/writing/patterns/catalog.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.catalog">Каталог</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-catalog-panel" role="region" aria-labelledby="pattern-catalog-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.a-large-set-of-items">Большой набор объектов, которые пользователи просматривают, ищут, фильтруют и&nbsp;сортируют.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.structure">Структура</h4>
+                      <ul>
+                        <li data-i18n="art.category-tree-and-mega-menu">Дерево категорий и&nbsp;мегаменю</li>
+                        <li data-i18n="art.nested-subcategories">Вложенные&nbsp;подкатегории</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.finding-items">Поиск&nbsp;объектов</h4>
+                      <ul>
+                        <li data-i18n="art.filters-and-sorting">Фильтры и&nbsp;сортировка</li>
+                        <li data-i18n="art.search-and-results-page">Поиск и&nbsp;страница&nbsp;результатов</li>
+                        <li data-i18n="art.item-comparison">Сравнение&nbsp;объектов</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.variations">Разновидности</h4>
+                      <ul>
+                        <li data-i18n="art.catalogs-of-brands-series-and">Каталоги брендов, серий и&nbsp;коллекций</li>
+                        <li data-i18n="art.ready-made-sets-of-products">Готовые наборы товаров: рецепты, дизайны&nbsp;комнат</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Где ещё&nbsp;встречается</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.job-boards">Сайты&nbsp;вакансий</li>
+                      <li data-i18n="art.real-estate-listings">Объявления о&nbsp;недвижимости</li>
+                      <li data-i18n="art.travel-booking">Бронирование&nbsp;путешествий</li>
+                      <li data-i18n="art.review-sites">Сайты&nbsp;отзывов</li>
+                      <li data-i18n="art.library-catalogs">Библиотечные&nbsp;каталоги</li>
+                      <li data-i18n="art.knowledge-bases">Базы&nbsp;знаний</li>
+                      <li data-i18n="art.task-trackers">Таск-трекеры</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-detail">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-detail-head" aria-expanded="true" aria-controls="pattern-detail-panel">
+                <img src="/assets/writing/patterns/pagetext.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.detail-page">Детальная страница</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-detail-panel" role="region" aria-labelledby="pattern-detail-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.the-page-with-full-information">Страница с&nbsp;полной информацией об&nbsp;одном объекте, где пользователь решает, что&nbsp;делать&nbsp;дальше.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.options">Опции</h4>
+                      <ul>
+                        <li data-i18n="art.variants-size-color">Варианты: размер,&nbsp;цвет</li>
+                        <li data-i18n="art.bundles">Наборы</li>
+                        <li><button class="row-link" type="button" data-open="pattern-configurator" data-i18n="art.configurator-and-form">Конфигуратор и&nbsp;форма</button></li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.content">Контент</h4>
+                      <ul>
+                        <li data-i18n="art.text-key-facts-tables-reviews">Текст, ключевые факты, таблицы,&nbsp;отзывы</li>
+                        <li data-i18n="art.photos-and-video">Фото и&nbsp;видео</li>
+                        <li data-i18n="art.carousels-and-accordions">Карусели и&nbsp;аккордеоны</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Где ещё&nbsp;встречается</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.property-listing">Объявление о&nbsp;недвижимости</li>
+                      <li data-i18n="art.job-posting">Вакансия</li>
+                      <li data-i18n="art.hotel-page">Страница&nbsp;отеля</li>
+                      <li data-i18n="art.app-store-page">Страница приложения в&nbsp;сторе</li>
+                      <li data-i18n="art.course-page">Страница&nbsp;курса</li>
+                      <li data-i18n="art.task-card">Карточка&nbsp;задачи</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-configurator">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-configurator-head" aria-expanded="true" aria-controls="pattern-configurator-panel">
+                <img src="/assets/writing/patterns/input.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.configurator-and-form">Конфигуратор и&nbsp;форма</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-configurator-panel" role="region" aria-labelledby="pattern-configurator-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.step-by-step-input-where">Пошаговый ввод, где каждый ответ влияет на&nbsp;следующий шаг и&nbsp;итоговый&nbsp;результат.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.entering-data">Ввод&nbsp;данных</h4>
+                      <ul>
+                        <li data-i18n="art.text">Текст</li>
+                        <li data-i18n="art.numbers-exact-value-estimate-or">Числа: точное значение, оценка или&nbsp;диапазон</li>
+                        <li data-i18n="art.location-address-or-map">Местоположение: адрес или&nbsp;карта</li>
+                        <li data-i18n="art.file-upload">Загрузка&nbsp;файла</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.choosing-from-a-list">Выбор из&nbsp;списка</h4>
+                      <ul>
+                        <li data-i18n="art.one-option">Один&nbsp;вариант</li>
+                        <li data-i18n="art.several-options">Несколько&nbsp;вариантов</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.result">Результат</h4>
+                      <ul>
+                        <li data-i18n="art.summary-of-choices">Сводка&nbsp;выбранного</li>
+                        <li data-i18n="art.submitting-the-form">Отправка&nbsp;формы</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Где ещё&nbsp;встречается</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.car-configurator">Конфигуратор&nbsp;автомобиля</li>
+                      <li data-i18n="art.custom-furniture">Мебель на&nbsp;заказ</li>
+                      <li data-i18n="art.insurance-quote">Расчёт&nbsp;страховки</li>
+                      <li data-i18n="art.tax-return">Налоговая&nbsp;декларация</li>
+                      <li data-i18n="art.account-opening">Открытие&nbsp;счёта</li>
+                      <li data-i18n="art.software-setup">Настройка&nbsp;ПО</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-custom">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-custom-head" aria-expanded="true" aria-controls="pattern-custom-panel">
+                <img src="/assets/writing/patterns/process.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.custom-flow">Кастомный флоу</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-custom-panel" role="region" aria-labelledby="pattern-custom-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.the-core-flows-of-a">Ключевые флоу продукта, построенные вокруг его собственных правил и&nbsp;данных.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.work-tools">Рабочие&nbsp;инструменты</h4>
+                      <ul>
+                        <li data-i18n="art.dashboards">Дашборды</li>
+                        <li data-i18n="art.help-desks">Хелпдески</li>
+                        <li data-i18n="art.task-trackers">Таск-трекеры</li>
+                        <li data-i18n="art.crm-and-erp">CRM и&nbsp;ERP</li>
+                        <li data-i18n="art.learning-platforms-lms">Обучающие платформы&nbsp;(LMS)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.online-services">Онлайн-сервисы</h4>
+                      <ul>
+                        <li data-i18n="art.booking-calendars-reservations-tickets">Бронирование: календари, резервирования,&nbsp;билеты</li>
+                        <li data-i18n="art.ad-platforms">Рекламные&nbsp;платформы</li>
+                        <li data-i18n="art.fintech-and-banking">Финтех и&nbsp;банкинг</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.platforms">Платформы</h4>
+                      <ul>
+                        <li data-i18n="art.freelance-marketplaces">Фриланс-биржи</li>
+                        <li data-i18n="art.file-storage">Файловые&nbsp;хранилища</li>
+                        <li data-i18n="art.intranets">Интранеты</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <p class="row-tip" data-i18n="art.start-with-products-of-the">Начните с&nbsp;продуктов того же&nbsp;типа. Затем проверьте, какие паттерны из&nbsp;этого списка в&nbsp;них есть: в&nbsp;большинстве кастомных флоу всё равно найдётся каталог, детальная страница или&nbsp;форма.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-business">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-business-head" aria-expanded="true" aria-controls="pattern-business-panel">
+                <img src="/assets/writing/patterns/luggage.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.business-specific-flows">Бизнес-специфичные флоу</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-business-panel" role="region" aria-labelledby="pattern-business-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.product-types-with-conventions-that">Типы продуктов с&nbsp;правилами, которые пользователи уже&nbsp;знают.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.communication">Общение</h4>
+                      <ul>
+                        <li data-i18n="art.messaging-apps">Мессенджеры</li>
+                        <li data-i18n="art.social-networks">Соцсети</li>
+                        <li data-i18n="art.dating-apps">Приложения для&nbsp;знакомств</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.maps-and-transport">Карты и&nbsp;транспорт</h4>
+                      <ul>
+                        <li data-i18n="art.maps-and-navigation">Карты и&nbsp;навигация</li>
+                        <li data-i18n="art.taxi-and-car-sharing">Такси и&nbsp;каршеринг</li>
+                        <li data-i18n="art.logistics-and-routing">Логистика и&nbsp;маршруты</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.media-and-games">Медиа и&nbsp;игры</h4>
+                      <ul>
+                        <li data-i18n="art.photo-and-video-editors">Фото- и&nbsp;видеоредакторы</li>
+                        <li data-i18n="art.video-and-music-players">Видео- и&nbsp;аудиоплееры</li>
+                        <li data-i18n="art.games">Игры</li>
+                        <li data-i18n="art.betting-and-casino-apps">Букмекеры и&nbsp;казино</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.trading">Трейдинг</h4>
+                      <ul>
+                        <li data-i18n="art.stock-and-crypto-exchanges">Фондовые и&nbsp;криптобиржи</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <p class="row-tip" data-i18n="art.users-learned-these-products-from">Пользователи изучили эти продукты на&nbsp;лидерах рынка и&nbsp;ждут, что&nbsp;ваш будет работать так&nbsp;же. Начните с&nbsp;прямых&nbsp;конкурентов.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-cart">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-cart-head" aria-expanded="true" aria-controls="pattern-cart-panel">
+                <img src="/assets/writing/patterns/cart.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.cart">Корзина</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-cart-panel" role="region" aria-labelledby="pattern-cart-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.a-place-to-collect-items">Место, где собирают объекты, просматривают и&nbsp;меняют их,&nbsp;а&nbsp;затем подтверждают все&nbsp;разом.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.before-checkout">До&nbsp;оформления</h4>
+                      <ul>
+                        <li data-i18n="art.mini-cart">Мини-корзина</li>
+                        <li data-i18n="art.cart-page">Страница&nbsp;корзины</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.checkout">Оформление&nbsp;заказа</h4>
+                      <ul>
+                        <li data-i18n="art.checkout-page">Страница&nbsp;оформления</li>
+                        <li data-i18n="art.add-ons-insurance-carry-in">Допуслуги: страховка, подъём на&nbsp;этаж</li>
+                        <li data-i18n="art.delivery-pickup-point-or-courier">Доставка: пункт выдачи или&nbsp;курьер</li>
+                        <li><button class="row-link" type="button" data-open="pattern-authentication" data-i18n="art.authentication">Аутентификация</button></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Где ещё&nbsp;встречается</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.trip-booking-flight-hotel-transfer">Бронирование поездки: перелёт, отель,&nbsp;трансфер</li>
+                      <li data-i18n="art.quote-request-b2b">Запрос коммерческого предложения&nbsp;(B2B)</li>
+                      <li data-i18n="art.repeat-grocery-order">Повторный заказ&nbsp;продуктов</li>
+                      <li data-i18n="art.bundle-builder">Сборка&nbsp;набора</li>
+                      <li data-i18n="art.bulk-file-actions">Массовые действия с&nbsp;файлами</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-payment">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-payment-head" aria-expanded="true" aria-controls="pattern-payment-panel">
+                <img src="/assets/writing/patterns/creditcard.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.payment">Оплата</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-payment-panel" role="region" aria-labelledby="pattern-payment-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.choosing-a-payment-method-confirming">Выбор способа оплаты, подтверждение суммы и&nbsp;понятный&nbsp;результат.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.payment-method">Способ&nbsp;оплаты</h4>
+                      <ul>
+                        <li data-i18n="art.new-or-saved-card">Новая или&nbsp;сохранённая&nbsp;карта</li>
+                        <li data-i18n="art.pay-later-credit-or-installments">Оплата позже: кредит или&nbsp;рассрочка</li>
+                        <li data-i18n="art.local-payment-methods">Локальные способы&nbsp;оплаты</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.steps">Шаги</h4>
+                      <ul>
+                        <li data-i18n="art.entering-payment-details">Ввод платёжных&nbsp;данных</li>
+                        <li data-i18n="art.payment-result-success-or-failure">Результат оплаты: успех или&nbsp;ошибка</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Где ещё&nbsp;встречается</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.subscriptions">Подписки</li>
+                      <li data-i18n="art.in-app-purchases">Покупки в&nbsp;приложении</li>
+                      <li data-i18n="art.wallet-top-ups">Пополнение&nbsp;кошелька</li>
+                      <li data-i18n="art.utility-bills">Коммунальные&nbsp;платежи</li>
+                      <li data-i18n="art.money-transfers">Денежные&nbsp;переводы</li>
+                      <li data-i18n="art.invoices-and-payment-links">Счета и&nbsp;платёжные&nbsp;ссылки</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-account">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-account-head" aria-expanded="true" aria-controls="pattern-account-panel">
+                <img src="/assets/writing/patterns/usercircle.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.account">Личный кабинет</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-account-panel" role="region" aria-labelledby="pattern-account-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.a-user-s-personal-space">Личное пространство пользователя: профиль, безопасность, оплата и&nbsp;настройки.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.personal">Личное</h4>
+                      <ul>
+                        <li data-i18n="art.profile">Профиль</li>
+                        <li data-i18n="art.order-history">История&nbsp;заказов</li>
+                        <li data-i18n="art.favorites">Избранное</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.loyalty">Лояльность</h4>
+                      <ul>
+                        <li data-i18n="art.wallet-and-balance">Кошелёк и&nbsp;баланс</li>
+                        <li data-i18n="art.bonus-points-and-loyalty-cards">Бонусные баллы и&nbsp;карты&nbsp;лояльности</li>
+                        <li data-i18n="art.gift-cards-and-member-status">Подарочные карты и&nbsp;статус&nbsp;участника</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.preferences-and-help">Настройки и&nbsp;помощь</h4>
+                      <ul>
+                        <li data-i18n="art.settings">Настройки</li>
+                        <li data-i18n="art.notifications">Уведомления</li>
+                        <li data-i18n="art.support-requests">Обращения в&nbsp;поддержку</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Где ещё&nbsp;встречается</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.saas-workspace-billing-team">Рабочее пространство SaaS: оплата,&nbsp;команда</li>
+                      <li data-i18n="art.store-account-orders-addresses">Аккаунт магазина: заказы,&nbsp;адреса</li>
+                      <li data-i18n="art.public-profile-author-seller">Публичный профиль: автор,&nbsp;продавец</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <script>
+          /* Pattern map: close all rows but the first, then toggle on click */
+          (function () {
+            var root = document.getElementById('pattern-map');
+            var rows = [].slice.call(root.querySelectorAll('.row'));
+            var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function set(row, open) {
+              row.classList.toggle('is-open', open);
+              row.querySelector('.row-head').setAttribute('aria-expanded', String(open));
+              var panel = row.querySelector('.row-panel');
+              if (open) panel.removeAttribute('inert'); else panel.setAttribute('inert', '');
+            }
+
+            rows.forEach(function (row, i) { set(row, i === 0); });
+            root.classList.add('is-ready');
+            requestAnimationFrame(function () {
+              requestAnimationFrame(function () { root.classList.add('is-animated'); });
+            });
+
+            root.addEventListener('click', function (e) {
+              var link = e.target.closest('.row-link');
+              if (link) {
+                var target = document.getElementById(link.getAttribute('data-open'));
+                var head = target.querySelector('.row-head');
+                set(target, true);
+                head.focus({ preventScroll: true });
+                head.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+                return;
+              }
+              var clicked = e.target.closest('.row-head');
+              if (!clicked) return;
+              var row = clicked.closest('.row');
+              set(row, !row.classList.contains('is-open'));
+            });
+          })();
+        </script>
+
+        <div class="text">
+          <p data-i18n="art.a-catalog-is-needed-where">Каталог нужен там, где люди не&nbsp;знают точно, что&nbsp;ищут: они шаг за&nbsp;шагом сужают выбор, пока не&nbsp;дойдут до&nbsp;нужного объекта. Если название известно, достаточно&nbsp;поиска.</p>
+          <p data-i18n="art.example-we-re-designing-a"><strong>Пример.</strong> Мы&nbsp;проектируем приложение для&nbsp;планирования поездок. Турист не&nbsp;знает, что&nbsp;есть в&nbsp;городе, поэтому список мест&nbsp;— это каталог. Страница места с&nbsp;фотографиями и&nbsp;часами работы&nbsp;— детальная страница. Места, добавленные в&nbsp;поездку, работают как&nbsp;корзина. Теперь референсы можно брать из&nbsp;интернет-магазинов и&nbsp;сервисов бронирования, а&nbsp;не&nbsp;только из&nbsp;других&nbsp;тревел-приложений.</p>
+          <p data-i18n="art.exception-in-niches-with-complex"><strong>Исключение.</strong> В&nbsp;нишах со&nbsp;сложной бизнес-логикой (геосервисы, соцсети, мессенджеры) абстракция помогает меньше. Там ищут проверенные решения у&nbsp;прямых аналогов: системы слишком сложны, чтобы придумывать связи с&nbsp;нуля.</p>
+          <p data-i18n="art.behind-this-is-jakob-s">За&nbsp;этим стоит <strong>закон Якоба</strong>: люди проводят большую часть времени в&nbsp;других продуктах и&nbsp;ждут, что&nbsp;ваш будет работать так&nbsp;же. Структура, поведение и&nbsp;элементы управления должны быть знакомыми; собственный визуальный стиль этому не&nbsp;мешает.</p>
+        </div>
+      </section>
+
+      <!-- ===== Collect ===== -->
+      <section id="collect">
+        <div class="text">
+          <h2 data-i18n="art.collect-everything-that-catches-your">Собирайте всё, что&nbsp;зацепило&nbsp;взгляд</h2>
+          <p data-i18n="art.save-everything-you-like-and">Сохраняйте всё, что&nbsp;нравится, и&nbsp;пока не&nbsp;оценивайте. Если фильтровать слишком рано, можно пропустить неожиданную находку из&nbsp;другой&nbsp;ниши.</p>
+          <p data-i18n="art.combine-sources-walk-through-the">Комбинируйте источники. Пройдите флоу сами, чтобы увидеть ошибки, письма и&nbsp;то,&nbsp;что&nbsp;происходит при&nbsp;возвращении. Используйте библиотеки экранов вроде Mobbin, чтобы сравнить один паттерн в&nbsp;десятках продуктов. Посмотрите исследования юзабилити Baymard Institute и&nbsp;Nielsen Norman&nbsp;Group.</p>
+          <p data-i18n="art.label-each-screen-right-away">Сразу подписывайте каждый экран: продукт, шаг,&nbsp;паттерн.</p>
+        </div>
+      </section>
+
+      <!-- ===== Analyze ===== -->
+      <section id="analyze">
+        <div class="text">
+          <h2 data-i18n="art.analyze-what-you-collected">Проанализируйте&nbsp;собранное</h2>
+          <p data-i18n="art.a-reference-without-a-note">Референс без&nbsp;заметки&nbsp;— просто картинка. К&nbsp;каждому запишите, что&nbsp;подходит вашей задаче, что&nbsp;нет и&nbsp;почему.</p>
+          <p data-i18n="art.ask-three-questions-which-user">Задайте три вопроса: какую задачу пользователя и&nbsp;бизнеса это решает, что&nbsp;происходит до&nbsp;и&nbsp;после, и&nbsp;сделано ли&nbsp;это для&nbsp;такой же&nbsp;аудитории, как&nbsp;ваша?</p>
+          <p data-i18n="art.compare-flows-by-the-same">Сравнивайте флоу по&nbsp;одним и&nbsp;тем же&nbsp;критериям в&nbsp;таблице «продукт&nbsp;×&nbsp;критерий». То,&nbsp;что&nbsp;есть у&nbsp;всех,&nbsp;— норма рынка. То,&nbsp;в&nbsp;чём решения расходятся,&nbsp;— место для&nbsp;ваших&nbsp;гипотез.</p>
+        </div>
+      </section>
+
+      <!-- ===== Cut ===== -->
+      <section id="cut">
+        <div class="text">
+          <h2 data-i18n="art.cut-what-you-don-t">Отсеките&nbsp;лишнее</h2>
+          <p data-i18n="art.run-what-you-ve-collected">Пропустите собранное через два&nbsp;фильтра.</p>
+          <p data-i18n="art.constraints-remove-what-doesn-t"><strong>Ограничения.</strong> Уберите то,&nbsp;что&nbsp;не&nbsp;вписывается в&nbsp;технические, юридические и&nbsp;ресурсные рамки, как&nbsp;бы&nbsp;хорошо это ни&nbsp;работало у&nbsp;других.</p>
+          <p data-i18n="art.value-and-cost-weigh-how"><strong>Ценность и&nbsp;стоимость.</strong> Взвесьте, насколько решение помогает пользователю и&nbsp;сколько стоит его сделать. Большая функция без&nbsp;понятной ценности уходит&nbsp;первой.</p>
+        </div>
+      </section>
+
+      <!-- ===== Team check ===== -->
+      <section id="team-check">
+        <div class="text">
+          <h2 data-i18n="art.check-your-conclusions-with-the">Сверьте выводы с&nbsp;командой</h2>
+          <p data-i18n="art.one-person-s-selection-stays">Подборка одного человека остаётся гипотезой, пока её&nbsp;не&nbsp;увидели другие. Покажите анализ продакт-менеджеру, разработчикам и&nbsp;клиенту: они знают приоритеты и&nbsp;ограничения, которых можете не&nbsp;знать&nbsp;вы.</p>
+          <p data-i18n="art.benchmarks-don-t-prove-a">Бенчмарки не&nbsp;доказывают, что&nbsp;решение сработает у&nbsp;вас. Финальная проверка&nbsp;— пользовательское тестирование и&nbsp;аналитика после&nbsp;запуска.</p>
+        </div>
+      </section>
+
+      <!-- ===== Result ===== -->
+      <section id="result">
+        <div class="text">
+          <h2 data-i18n="art.what-you-end-up-with">Что&nbsp;получается в&nbsp;итоге</h2>
+          <p data-i18n="art.a-list-of-the-patterns">Список паттернов, из&nbsp;которых состоит задача, таблица «продукт&nbsp;×&nbsp;критерий», референсы с&nbsp;заметками (что&nbsp;берём, что&nbsp;отклонили и&nbsp;почему) и&nbsp;список вопросов, которые никто не&nbsp;задал, когда задачу обсуждали&nbsp;впервые.</p>
+        </div>
+      </section>
+
+      <!-- ===== Mobbin and Claude ===== -->
+      <section id="mobbin-claude">
+        <div class="text">
+          <h2 data-i18n="art.doing-it-faster-with-mobbin">Быстрее с&nbsp;Mobbin и&nbsp;Claude</h2>
+          <p data-i18n="art.mobbin-has-an-mcp-server">У&nbsp;Mobbin есть MCP-сервер, поэтому Claude может искать по&nbsp;его библиотеке реальных экранов и&nbsp;флоу за&nbsp;меня. Я&nbsp;описываю задачу, отправляю скриншот или&nbsp;прикладываю бриф и&nbsp;получаю примеры из&nbsp;других продуктов со&nbsp;ссылками на&nbsp;Mobbin.</p>
+        </div>
+
+        <figure class="shot">
+          <img src="/assets/writing/mobbin-connector.png" width="750" height="517" alt="Страница коннектора Mobbin в Claude: подключён, с инструментами search_flows, search_screens и search_sections" data-i18n-attrs="alt:art.shot.alt" loading="lazy">
+        </figure>
+
+        <div class="text">
+          <p data-i18n="art.to-keep-every-search-in">Чтобы каждый поиск шёл в&nbsp;порядке этого гайда, я&nbsp;упаковал шаги в&nbsp;скилл для&nbsp;Claude. Он&nbsp;превращает задачу в&nbsp;поисковые запросы, проверяет каждый результат по&nbsp;одному критерию и&nbsp;говорит, чего не&nbsp;нашёл.</p>
+          <p data-i18n="art.it-speeds-up-collecting-not">Это ускоряет сбор, а&nbsp;не&nbsp;размышления. Заметки, сравнение и&nbsp;отсев остаются моей&nbsp;работой.</p>
+        </div>
+
+        <div class="skill-group">
+        <div class="skill" id="skill" data-collapse="Свернуть" data-copied="Скопировано" data-selected="Выделено" data-status-copied="SKILL.md скопирован" data-status-selected="Текст выделен, скопируйте его с клавиатуры" data-i18n-attrs="data-collapse:art.skill.collapse data-copied:art.skill.copied data-selected:art.skill.selected data-status-copied:art.skill.status-copied data-status-selected:art.skill.status-selected">
+          <div class="skill-head">
+            <h3 class="skill-name">SKILL.md</h3>
+            <button class="skill-btn" type="button" id="skill-copy" data-i18n="art.copy">Копировать</button>
+            <a class="skill-btn" href="/assets/writing/reference-benchmarking.zip" download data-i18n="art.download-zip">Скачать ZIP</a>
+          </div>
+          <div class="skill-code" id="skill-code" role="region" aria-label="Содержимое SKILL.md" data-i18n-attrs="aria-label:art.skill.region" tabindex="0">
+            <pre><code>---
+name: reference-benchmarking
+description: Finds UI references in Mobbin and benchmarks them for a design task. Use when the user asks for references or how other products solve a screen or flow, or sends a screenshot or a brief.
+---
+
+# Finding references and benchmarking them
+
+Turn a design task into precise Mobbin searches, read what comes back, compare it and cut it down. Reply in the user's language. Write every Mobbin query and `task_intent` in English: the search is built around English screen and pattern names.
+
+The method comes from the article "Finding references and a bit about benchmarking" by Artem Shevliakov: https://artem-shevliakov.vercel.app/writing/references-and-benchmarks
+
+## Scale the work to the request
+
+- **Quick look.** The user wants examples ("show me login screens", "how do others do X"). Do sections 1 and 4, stop at five on-target products, and answer with references. Skip the framing, the table and the cuts. End with a one-line offer of the full benchmark.
+- **Full benchmark.** The user asks to compare or benchmark, attaches a brief, or says a decision depends on the answer. Do every section.
+
+When unsure, do the quick look.
+
+## 1. Read the input
+
+The input can be plain text, a screenshot, a brief, or a mix. Whatever it is, extract the same things before searching:
+
+| What | How it is used |
+|---|---|
+| Scenario, screen or element | The core of every query |
+| Product category (banking app, car sharing, B2B analytics) | A hint that pulls comparable products |
+| Platform | The `platform` parameter: `ios` or `web`. Mobbin has no Android; use `ios` and say so |
+| Named products | Filter results to them |
+| Goal and constraints | Used later to judge and cut. They do not go into queries |
+
+**Text.** Take the screen or flow in the user's own words.
+
+**Screenshot.** Look at the image first. Name three things: the screen type, the product category, and the platform (a status bar means `ios`; browser chrome or a wide layout means `web`). Then decide what the user wants from it: the same screen in other products (the default), one element of it, or the step before or after it. Search by what the screen or element is, not by how it looks; colors and layout words do not help. If the message does not say what they want and the options lead to different searches, ask one short question. Go by the image, even when it differs from what you know about the user's other projects. If the user's own product comes back in the results, drop it and say that it came back: it confirms the query hit the right pattern.
+
+**Brief or task description.** Read all of it. Pull out the goal, context and constraints, list the scenarios it covers, and pick the ones in scope. Search per scenario step or per pattern, never the brief as a whole. A constraint that implies its own screen or state ("only the owner can upgrade" means a screen for everyone else) becomes a query of its own.
+
+Briefs and screenshots of unreleased work are often confidential. Queries, `task_intent`, web searches and your reply carry only generic category and pattern words: no client name, no unreleased product name, no copied sentences.
+
+If the scenario, category or platform is missing and would change the search, ask once, in one message. Otherwise state your assumption and go on.
+
+## 2. Frame the task
+
+Name the service type and the funnel stage. They define the goal of the screen and which products are comparable.
+
+| Stage | Services | E-commerce | SaaS |
+|---|---|---|---|
+| 1 | Finding a service, studying the terms | Finding a product, comparing options | Onboarding, activation |
+| 2 | Trust in the company and the service | Trust in the product, adding to cart | Usage, aha moment |
+| 3 | First contact, first payment | Checkout and payment | Upgrade to a paid plan |
+| 4 | Service delivery | Delivery and pickup | Retention, upsell |
+| 5 | Repeat sales | Repeat purchases | Subscription renewal, upgrade |
+
+For mixed products pick the funnel by the scenario: a marketplace checkout is e-commerce, its seller dashboard is SaaS.
+
+Then describe the scenario without any interface (what the user wants to get, which steps it takes) and note whose products are worth a look, from near to far: direct competitors, adjacent products, neighboring fields with the same mechanic, market leaders from any industry.
+
+For a full benchmark, get three or four direct competitors by name before searching: take them from the brief, ask the user, or run a web search for the category. A product name is the only reliable way to get a direct competitor out of Mobbin.
+
+## 3. Break the task into patterns
+
+Most tasks are assembled from parts that have been solved many times. Each pattern becomes its own search, and the last column says where the less obvious references are.
+
+| Pattern | What it is | Less obvious places to look |
+|---|---|---|
+| Authentication | Sign-up, sign-in, password reset, 2FA, identity verification | Identity verification: fintech and crypto, online betting, mobile operators, car rental and sharing, short-term rentals, gig and freelance platforms |
+| Onboarding and activation | The path from first open to first value | Any product with a setup step before first use |
+| Catalog | A set of objects to search, filter and group | Task tracker, settings, template library, list of integrations |
+| Detail page | Extended information about one object | Product, task, customer or setting page |
+| Configurator and form | Step-by-step input and choices that build a result | Buying insurance, setting up a plan, creating an ad campaign |
+| Custom flows | Sequences specific to this product | Direct competitors |
+| Business-specific flows | Flows dictated by the domain | Direct competitors |
+| Cart | A place to gather selected items for one final action | Order, export list, comparison, bulk actions on files |
+| Payment | Paying once or setting up a recurring payment | Subscriptions, donations, top-ups |
+| Account | Profile, settings, plan and history | Any product with accounts |
+
+Not in the map, but they search well as patterns of their own: paywalls and upgrade prompts, limit and empty states, confirmation screens.
+
+Products built around one core mechanic (geo services, social networks, messengers) are harder to split. For them study how direct competitors built the whole system.
+
+## 4. Search Mobbin
+
+### Pick the tool
+
+| Need | Tool | Settings |
+|---|---|---|
+| Order of steps, where a step sits in a journey | `Mobbin:search_flows` | `limit` 3 to 5 |
+| One screen, state or element of an app, mobile or web | `Mobbin:search_screens` | `limit` 6 to 10, `mode` deep |
+| A block of a marketing website (hero, pricing, footer) | `Mobbin:search_sections` | `limit` 6 to 10, no platform |
+
+A web product's interface is a screen search with `platform` web. Section search matches the type of block, not what is inside it, so do not use it to find an element. Keep limits small: every result is an image, and large batches crowd out the analysis.
+
+### Set the match criterion
+
+Before the first call, write one sentence that says what must be on a screen for it to count, and put it in the plan line: "an open control for the interface language, reachable from the header". After each call keep only the results that meet it and note the count ("4 of 8"). The criterion keeps near-misses out of the answer and shows which query worked.
+
+- Include the state when the query asks for one, and the category when the user named one, with its boundary ("apps whose main content is meditation").
+- Judge by the control or step the user asked about, not by a similar one nearby. A weak match does not count.
+- A brief with several steps gets one criterion per step.
+
+### Write the query
+
+- **One screen or one journey per query.** Several needs mean several queries.
+- **For a screen or flow: product category + type.** "banking app onboarding", "car sharing app identity verification". A bare "onboarding" mixes every category together.
+- **For one element: the element, where it sits, and its state.** "language dropdown open in header". Here placement and state are what make a result match, so add them even when the user did not say them.
+- **Otherwise add a detail only when the task depends on it** ("checkout with payment method selection"). Every extra detail pushes the results toward one solution and hides the variety you are searching for. Do not add specifics the user did not mention.
+- **Name what is on the screen, not the goal.** "Trust" or "good onboarding" finds nothing useful. Translate the goal into screens first: "identity verification", "reviews", "money-back guarantee".
+- **Leave out** style words (modern, clean), negations, keyword lists and the platform. Phrase a negative state as an action: "ask admin to upgrade", not "cannot upgrade". Stay under 500 characters.
+
+The category is a soft hint, not a filter. It helps when the domain shapes the flow (banking onboarding, car sharing verification). Skip it for components every product has (language switcher, search, settings), unless the user tied the request to a category: the category words collide with content and pull the wrong products.
+
+### Use Mobbin's words
+
+Mobbin labels every screen with its own terms. When one fits, use its words in the query in place of a looser synonym, as plain text without the ampersand ("subscription paywall"). The lists are partial; when nothing fits, use plain words.
+
+| Looking for | Mobbin's label |
+|---|---|
+| First screen with sign-up and log-in buttons | Welcome &amp; Get Started |
+| Questions and setup right after sign-up | Account Setup |
+| Registration, sign-in | Signup, Login |
+| Paywall, choice of plan | Subscription &amp; Paywall, Pricing |
+| Balance, cards, accounts | Wallet &amp; Balance |
+| A screen with nothing in it yet | Empty State |
+| Profile | My Account &amp; Profile |
+| Announcement of a feature | Feature Info |
+
+Flow actions: Creating Account, Onboarding, Logging In, Subscribing &amp; Upgrading, Purchasing &amp; Ordering, Adding &amp; Creating, Editing &amp; Updating, Selecting &amp; Choosing, Inviting Teammates &amp; Friends, Enabling &amp; Disabling, Uploading &amp; Downloading, Scanning, Deleting &amp; Deactivating Account, Giving Feedback.
+
+UI elements: Dialog, Bottom Sheet, Full-Screen Overlay, Select, Text Field, Checkbox, Segmented Control, Tab, Tab Bar, Top Navigation Bar, Toolbar, Card, Tile, Chip, Badge, Banner, Carousel, Stacked List, Table, Progress Indicator, Floating Action Button, Avatar.
+
+### Three kinds of search
+
+1. **In the category.** The query with the user's product category. Skip it for universal components.
+2. **By pattern.** The pattern alone, without the category: "driver license verification", "upgrade plan with number of seats selection". This pulls the same step from neighboring fields and is where the non-obvious references come from. Mobbin's own tool hints say to always include the kind of app; drop it here on purpose.
+3. **By product.** A product name plus the screen of the key step: "ClickUp upgrade plan seats". A looser query ("ClickUp upgrade plan") mostly returns pricing tables. Run one for each competitor named in section 2. Use screen search for this: flow search filters to the product but ranks its journeys poorly.
+
+How many to run:
+
+- **Quick look.** One search: in the category if the user named one, by pattern otherwise. Run a second only if fewer than five on-target products came back. To widen it, try a sibling category (sleep or breathing apps next to meditation) and label those results; repeating the same query mostly returns more screens of the same products.
+- **Brief with several steps.** One pattern search per step first. Then product searches for the named competitors on the key step. Add one flow search for the whole journey when the order of steps matters. About ten calls in total, and five to ten products in the comparison for the whole task.
+- **Rare states.** Role-restricted and error states are rarely in the library. Give them one call, then report the gap.
+
+Say the plan in one line before the first call ("Searching Mobbin: web screens for a language dropdown in the header") and start; do not wait for approval. The final reply lists the queries instead.
+
+### Tune and page
+
+- `deep` mode reads the intent. When few screens match, it fills the batch with near-misses, so expect to discard part of a batch for a rare state.
+- `standard` mode matches the words literally and is noisier; keep its limit small. Use it when deep keeps returning a neighboring screen type instead of the one asked for (a settings page instead of a header control).
+- Pass the ids you have already seen in `exclude_screen_ids`, across different queries too. It excludes screens, not products. For flows and sections raise `page`.
+- Weak results: remove the detail, then the category. If the state itself is rare, say so; do not loosen the query until it means something else.
+- Use the same `task_intent` (one generic English sentence) on every call for one task. Set `output_destination` to `chat` when answering in the conversation and `doc` when the user asked for a document.
+- If a result carries an `ai_usage_notice`, show its text as its own block, word for word.
+- On a rate-limit error wait, then run the calls one at a time. If Mobbin is not connected, say so and use web search instead.
+
+### Read the results
+
+- Look at every image before describing it. Do not describe a screen from its name or metadata. If a preview is too small to read, leave it out.
+- A flow result shows only a sample of its screens (for example 5 of 14). Describe what you saw, link to the flow for the rest, and search screens for a step the sample skipped if you have calls left.
+- One reference is one product. Add a second link for the same product only when it shows a different state.
+- Results from a sibling category that arrive unasked may be listed, labeled as such; they do not count as on target.
+- When more than eight results are on target, keep the ones that differ most from each other.
+- Do not pad the answer with off-target screens. Report gaps as what the search returned ("the search returned no other meditation apps"), not as what Mobbin lacks.
+- Link each reference to its `mobbin_url`. The `image_url` expires.
+- Save to a Mobbin collection only when the user asks: `Mobbin:create_collection`, then `Mobbin:save_content`.
+
+### Examples
+
+**Text.** Input: "нужны рефы на онбординг для финтех приложения, ios"
+Reading: quick look; onboarding flow; fintech app; `ios`.
+Searches: flows "fintech app onboarding".
+
+**Screenshot.** Input: a web header with an open language list and "как это решают другие?"
+Reading: quick look; one element; `web`; a universal component, so no category.
+Criterion: an open control for the interface language, reachable from the header.
+Search: screens "language dropdown open in header"; if deep returns settings pages, repeat in `standard`.
+
+**Brief.** Input: a document asking to add a driving licence check before the first rental in a car sharing app, with a deadline and a no-manual-review constraint.
+Reading: full benchmark; Services, stage 3; pattern: Authentication, identity verification; `ios`.
+Competitors, by web search: three car sharing products by name.
+Searches: screens "driver license verification"; flows "car sharing app identity verification"; then screens "&lt;competitor&gt; driver license check" for each. Nothing from the brief's wording goes into a query.
+
+## 5. Add what Mobbin cannot show
+
+- **The products themselves.** Errors, emails, push notifications and what happens on return are rarely in a library. If the user can walk through a flow, ask them to capture these.
+- **Usability research.** Search Baymard Institute and Nielsen Norman Group for the pattern. Open a page before citing it. If nothing specific turns up, say so.
+
+## 6. Analyze
+
+For each reference keep three questions in mind: which user and business task does it solve, what happens before and after it, and is it made for an audience like the user's? Fold the answers into one line per reference; do not answer them one by one.
+
+Then compare flows by the same criteria in a product × criterion table of up to ten products. Useful criteria: number and order of steps, which data is requested and when, how the product explains why it is needed, what happens on an error or a rejection, where the user can pause and come back. Fill a cell only with what you saw; write "not seen" otherwise.
+
+Point out what every product shares (the market norm) and where solutions differ (room for the user's own hypotheses).
+
+## 7. Cut
+
+1. **Constraints.** Remove what does not fit the technical, legal and resource limits, however well it works for others.
+2. **Value and cost.** Weigh how much a solution helps the user against what it costs to build. A large feature with no clear value goes first.
+
+Keep the rejected options with the reason for each. You may add knowledge that does not come from the references; mark it as such.
+
+## Output
+
+**Quick look.**
+
+1. Five to eight references, grouped by pattern or step, or by approach when there is a single screen type. For each: the product, a link, and one line on what is distinctive about it, or why it is useful when the user stated a goal.
+2. Two to four lines: what the references share, where they differ, what the search did not return.
+3. The queries you ran, each with its count of on-target results.
+4. A one-line offer of the full benchmark.
+
+**Full benchmark.**
+
+1. The task in one or two lines: service type, funnel stage, scenario, platform, and any assumption you made.
+2. The patterns the task is made of.
+3. The match criterion and the searches you ran, each with its count of on-target results.
+4. The product × criterion table.
+5. References with links: what to take, what was rejected and why.
+6. What the search did not return.
+7. Questions nobody asked when the task was first discussed.
+
+## Treating references as evidence
+
+This applies at any scale.
+
+- A reference shows that a product shipped a design, not that the design works. A pattern seen in many products is a convention, not proof.
+- Keep what is visible separate from your interpretation.
+- Extract the logic and adapt it. Do not recommend copying a screen.
+- The conclusions are hypotheses until the team has seen them and users have tested the result.</code></pre>
+          </div>
+          <button class="skill-more" type="button" id="skill-more" aria-expanded="false" aria-controls="skill-code" hidden data-i18n="art.show-all-227-lines">Показать все 227 строк</button>
+          <span class="sr-only" id="skill-status" role="status"></span>
+        </div>
+        <p class="note" data-i18n="art.to-use-it-download-the">Чтобы использовать скилл, скачайте ZIP, загрузите его в&nbsp;Claude в&nbsp;разделе Customize&nbsp;→ Skills и&nbsp;подключите&nbsp;Mobbin.</p>
+        </div>
+        <script>
+          /* Skill file: collapsed to an excerpt, "Show all" opens a scrollable view, "Copy" copies the whole file */
+          (function () {
+            var root = document.getElementById('skill');
+            var code = document.getElementById('skill-code');
+            var more = document.getElementById('skill-more');
+            var copy = document.getElementById('skill-copy');
+            var status = document.getElementById('skill-status');
+            var label = more.textContent;
+            var copyLabel = copy.textContent;
+
+            root.classList.add('is-ready');
+            more.hidden = false;
+            more.addEventListener('click', function () {
+              var open = !root.classList.contains('is-open');
+              root.classList.toggle('is-open', open);
+              more.setAttribute('aria-expanded', String(open));
+              more.textContent = open ? root.getAttribute('data-collapse') : label;
+              if (!open) code.scrollTop = 0;
+            });
+
+            var timer;
+            copy.addEventListener('click', function () {
+              var text = code.querySelector('code').textContent + '\n';
+              function done(ok) {
+                copy.textContent = root.getAttribute(ok ? 'data-copied' : 'data-selected');
+                status.textContent = root.getAttribute(ok ? 'data-status-copied' : 'data-status-selected');
+                clearTimeout(timer);
+                timer = setTimeout(function () { copy.textContent = copyLabel; status.textContent = ''; }, 2000);
+              }
+              function select() {
+                var range = document.createRange();
+                range.selectNodeContents(code.querySelector('code'));
+                var selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                done(false);
+              }
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () { done(true); }, select);
+              } else {
+                select();
+              }
+            });
+          })();
+        </script>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* Side menu: mark the section that is being read */
+      var links = [].slice.call(document.querySelectorAll('#toc a'));
+      var sections = links.map(function (a) { return document.getElementById(a.hash.slice(1)); });
+      var spyQueued = false;
+      function spy() {
+        spyQueued = false;
+        var current = 0;
+        sections.forEach(function (s, i) { if (s.getBoundingClientRect().top <= 120) current = i; });
+        links.forEach(function (a, i) {
+          if (i === current) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+        });
+      }
+      window.addEventListener('scroll', function () {
+        if (!spyQueued) { spyQueued = true; requestAnimationFrame(spy); }
+      }, { passive: true });
+      spy();
+
+      /* Funnel slider: arrows, dots and swipe share one scroll position */
+      var slider = document.getElementById('funnels');
+      var track = slider.querySelector('.slides');
+      var slides = [].slice.call(track.children);
+      var dots = [].slice.call(slider.querySelectorAll('.dot'));
+      var prev = slider.querySelector('.slider-btn--prev');
+      var next = slider.querySelector('.slider-btn--next');
+      var index = 0;
+
+      function step() { return slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : track.clientWidth; }
+      function go(i) {
+        i = Math.max(0, Math.min(slides.length - 1, i));
+        track.scrollTo({ left: i * step(), behavior: reduce ? 'auto' : 'smooth' });
+      }
+      function update() {
+        var i = Math.round(track.scrollLeft / step());
+        if (i === index) return;
+        index = i;
+        dots.forEach(function (d, n) {
+          if (n === index) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current');
+        });
+        var active = document.activeElement;
+        prev.disabled = index === 0;
+        next.disabled = index === slides.length - 1;
+        if (active === prev && prev.disabled) next.focus();
+        if (active === next && next.disabled) prev.focus();
+      }
+      var sliderQueued = false;
+      track.addEventListener('scroll', function () {
+        if (!sliderQueued) { sliderQueued = true; requestAnimationFrame(function () { sliderQueued = false; update(); }); }
+      }, { passive: true });
+      prev.addEventListener('click', function () { go(index - 1); });
+      next.addEventListener('click', function () { go(index + 1); });
+      dots.forEach(function (d, n) { d.addEventListener('click', function () { go(n); }); });
+    })();
+  </script>
+<script src="/assets/lang-switcher.js" defer></script>
+</body>
+</html>

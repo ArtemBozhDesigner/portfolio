@@ -5,6 +5,9 @@ English pages in the repo root are the source. Text marked with data-i18n="key"
 (and attributes listed in data-i18n-attrs="attr:key") is replaced with the
 strings from i18n/<lang>.json and written to /<lang>/<page>.
 
+Pages listed in NBSP_PAGES also get non-breaking spaces after short words,
+in every language (scripts/nbsp.py).
+
 Run from the repo root after any change to a page or a dictionary:
 
     python3 scripts/build-i18n.py
@@ -18,8 +21,13 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import nbsp  # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PAGES = ['index.html', 'about.html', 'writing.html']
+PAGES = ['index.html', 'about.html', 'writing.html', 'writing/references-and-benchmarks.html']
+# Pages whose text gets non-breaking spaces after short words (see scripts/nbsp.py)
+NBSP_PAGES = {'writing/references-and-benchmarks.html'}
 # (code, label on the button, name in the list, word for "Language")
 LANGS = [
     ('en', 'EN', 'English'),
@@ -117,8 +125,7 @@ def translate(text, lang, strings, page, used):
 
     def href_sub(m):
         path = m.group(1)
-        # assets are shared; articles under /writing/ exist in English only
-        if path.startswith('/assets/') or path.startswith('/writing/'):
+        if path.startswith('/assets/'):
             return m.group(0)
         return f'href="/{lang}{"" if path == "/" else path}"'
 
@@ -141,14 +148,15 @@ def main():
     for lang, _, _ in LANGS:
         if lang == SOURCE:
             for page, text in pages.items():
-                write(page, SWITCHER_RE.sub(lambda m: switcher(lang, page, source['lang.label']), text))
+                out = SWITCHER_RE.sub(lambda m: switcher(lang, page, source['lang.label']), text)
+                write(page, nbsp.fix_page(out) if page in NBSP_PAGES else out)
             continue
         strings = json.loads(read(f'i18n/{lang}.json'))
         used = {'lang.label'}
         for page, text in pages.items():
             out = translate(text, lang, strings, page, used)
             out = SWITCHER_RE.sub(lambda m: switcher(lang, page, strings['lang.label']), out)
-            write(f'{lang}/{page}', out)
+            write(f'{lang}/{page}', nbsp.fix_page(out) if page in NBSP_PAGES else out)
         extra = sorted(set(strings) - used)
         if extra:
             sys.exit(f'{lang}: keys not used by any page: {", ".join(extra)}')
