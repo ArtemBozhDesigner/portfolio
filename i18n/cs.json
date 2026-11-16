@@ -20,7 +20,7 @@
   "about.toolkit": "Aktuální nástroje",
   "about.toolkit.label": "Aktuální nástroje",
   "art.2fa": "2FA",
-  "art.5-min-read": "5 min čtení",
+  "art.8-min-read": "8 min čtení",
   "art.a-catalog-is-needed-where": "Katalog je potřeba tam, kde lidé přesně nevědí, co hledají: krok za krokem zužují výběr, dokud nedojdou ke správné položce. Pokud znají název, stačí vyhledávání.",
   "art.a-large-set-of-items": "Velká sada položek, které uživatelé prohlížejí, hledají, filtrují a řadí.",
   "art.a-list-of-the-patterns": "Seznam vzorů, ze kterých se úkol skládá, tabulka „produkt × kritérium“, reference s poznámkami (co přebíráte, co jste zamítli a proč) a seznam otázek, které nikdo nepoložil, když se úkol poprvé probíral.",
@@ -347,7 +347,7 @@
   "writing.filter.label": "Filtrovat poznámky",
   "writing.intro": "Návody a poznámky z mého designového procesu, psané pro designéry, kteří hledají metodu použitelnou opakovaně.",
   "writing.list.label": "Poznámky",
-  "writing.note1.meta": "5 min",
+  "writing.note1.meta": "8 min",
   "writing.note1.title": "Hledání referencí a trochu o benchmarkingu",
   "writing.placeholder.meta": "? min",
   "writing.title": "Poznámky"

@@ -20,7 +20,7 @@
   "about.toolkit": "Aktuelles Toolkit",
   "about.toolkit.label": "Aktuelles Toolkit",
   "art.2fa": "2FA",
-  "art.5-min-read": "5 Min. Lesezeit",
+  "art.8-min-read": "8 Min. Lesezeit",
   "art.a-catalog-is-needed-where": "Ein Katalog ist dort nötig, wo Menschen nicht genau wissen, was sie suchen: Sie grenzen die Auswahl Schritt für Schritt ein, bis sie beim richtigen Objekt ankommen. Kennen sie den Namen, reicht die Suche.",
   "art.a-large-set-of-items": "Eine große Menge von Objekten, die Nutzer durchstöbern, durchsuchen, filtern und sortieren.",
   "art.a-list-of-the-patterns": "Eine Liste der Patterns, aus denen die Aufgabe besteht, eine Tabelle „Produkt × Kriterium“, kommentierte Referenzen (was du übernimmst, was du verworfen hast und warum) und eine Liste von Fragen, die niemand gestellt hat, als die Aufgabe zum ersten Mal besprochen wurde.",
@@ -347,7 +347,7 @@
   "writing.filter.label": "Notizen filtern",
   "writing.intro": "Leitfäden und Notizen aus meinem Designprozess, geschrieben für Designerinnen und Designer, die eine wiederverwendbare Methode suchen.",
   "writing.list.label": "Notizen",
-  "writing.note1.meta": "5 Min.",
+  "writing.note1.meta": "8 Min.",
   "writing.note1.title": "Referenzen finden und ein wenig über Benchmarking",
   "writing.placeholder.meta": "? Min.",
   "writing.title": "Notizen"
