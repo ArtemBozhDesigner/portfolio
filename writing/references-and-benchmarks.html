@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Finding references and a bit about benchmarking — Artem Shevliakov</title>
+  <meta name="description" content="A guide to searching for design references so that every find answers a specific question: service type, funnel stage, scenario, patterns, analysis and cuts.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    /* ============ Tokens (from Figma) ============ */
+    :root {
+      color-scheme: light;
+
+      /* Color */
+      --bg-page: #fafafa;
+      --bg-surface: #ffffff;
+      --bg-chip: #f8f8f9;
+      --text-strong: #141516;
+      --text-body: #36383a;
+      --text-secondary: #5b5e61;
+      --text-meta: #74777a;
+      --text-funnel-sub: #9c9ea0;
+      --text-funnel-alt: #818487;
+      --accent: #4379d3;
+      --dot: #d1d2d3;
+      --link-line: #c4c6c8;
+
+      /* Type */
+      --font-body: "Inter Tight", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+      /* Layout: 846px column for visuals, 630px measure for text, 156px side menu */
+      --column: 846px;
+      --measure: 630px;
+      --edge: clamp(12px, 5.7vw, 80px);
+
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text-body);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 24px;
+      letter-spacing: 0.01em;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; letter-spacing: inherit; color: inherit; }
+    strong { font-weight: 500; }
+    :focus-visible { outline: 2px solid var(--text-strong); outline-offset: 3px; }
+
+    /* ============ Logo ============ */
+    .logo {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 15px);
+      left: var(--edge);
+      z-index: 11;
+      display: block;
+      width: 42px;
+      height: 32px;
+    }
+
+    /* ============ Layout ============
+       Side menu on the left, the column centered on the page */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(156px, 1fr) minmax(0, var(--column)) minmax(0, 1fr);
+      column-gap: 24px;
+      padding: 100px var(--edge) 96px;
+    }
+
+    /* ============ Side menu ============ */
+    .side {
+      position: sticky;
+      top: calc(env(safe-area-inset-top, 0px) + 32px);
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 24px;
+      width: 156px;
+    }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-meta);
+      transition: color .15s;
+    }
+    .back::before {
+      content: "";
+      width: 20px;
+      height: 20px;
+      background: currentColor;
+      -webkit-mask: url(/assets/icons/arrow-left.svg) center / 20px 20px no-repeat;
+      mask: url(/assets/icons/arrow-left.svg) center / 20px 20px no-repeat;
+    }
+    .toc {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toc a {
+      display: block;
+      color: var(--text-meta);
+      transition: color .15s;
+    }
+    .toc a[aria-current] { color: var(--text-strong); }
+
+    /* ============ Article ============ */
+    .article {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+      min-width: 0;
+    }
+    .article > section {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 32px);
+    }
+    .text {
+      width: 100%;
+      max-width: var(--measure);
+      margin-inline: auto;
+    }
+    .article h1 {
+      font-weight: 500;
+      font-size: 32px;
+      line-height: 48px;
+      color: var(--text-strong);
+    }
+    .meta {
+      margin-top: 12px;
+      color: var(--text-meta);
+    }
+    .article h2 {
+      font-weight: 500;
+      font-size: 21px;
+      line-height: 28px;
+      color: var(--text-strong);
+      margin-bottom: 16px;
+    }
+    .text p { text-wrap: pretty; }
+    .text p + p { margin-top: 16px; }
+    .text p a {
+      text-decoration: underline;
+      text-decoration-color: var(--link-line);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      transition: text-decoration-color .15s;
+    }
+
+    /* ============ Funnel slider ============
+       Each slide is drawn on a 846 x 710 stage. --u is one stage pixel:
+       1px while the stage fits, smaller once the slider is narrower than the funnel */
+    .slider { container-type: inline-size; }
+    .slider-view {
+      --u: min(1px, calc(100cqw / 464));
+      position: relative;
+    }
+    .slides {
+      display: flex;
+      gap: 16px;
+      list-style: none;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      border-radius: clamp(20px, 3.8cqw, 32px);
+    }
+    .slides::-webkit-scrollbar { display: none; }
+    .slide {
+      position: relative;
+      flex: 0 0 100%;
+      height: calc(710 * var(--u));
+      overflow: hidden;
+      background: var(--bg-surface);
+      border-radius: inherit;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+    }
+    .f {
+      position: absolute;
+      top: calc(var(--y) * var(--u));
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: none;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .f-wrap {
+      width: calc(var(--w) * max(var(--u), 0.8px));
+      white-space: normal;
+    }
+    .f-shape {
+      width: calc(429 * var(--u));
+      height: calc(var(--h) * var(--u));
+    }
+    .f-sep {
+      width: calc(420 * var(--u));
+      height: calc(6 * var(--u));
+      background: var(--bg-surface);
+    }
+    .f-title {
+      font-weight: 500;
+      font-size: max(calc(24 * var(--u)), 18px);
+      line-height: 1.3333;
+      color: var(--text-strong);
+    }
+    .f-sub {
+      font-size: max(calc(15 * var(--u)), 12px);
+      line-height: 1.3333;
+      color: var(--text-funnel-sub);
+    }
+    .f-stage {
+      font-size: max(calc(17 * var(--u)), 13px);
+      line-height: 1.4118;
+      color: var(--text-body);
+    }
+    .f-stage--2 { color: var(--text-funnel-alt); }
+    .f-labels {
+      display: flex;
+      gap: calc(12 * var(--u));
+      list-style: none;
+      font-size: max(calc(15 * var(--u)), 12px);
+      line-height: 1.3333;
+      color: var(--accent);
+    }
+
+    .slider-btn {
+      position: absolute;
+      top: calc(355 * var(--u));
+      translate: 0 -50%;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      transition: background-color .15s, opacity .15s, scale .15s;
+    }
+    .slider-btn img { width: 20px; height: 20px; }
+    .slider-btn--prev { left: clamp(6px, 3.31cqw, 28px); }
+    .slider-btn--prev img { rotate: 180deg; }
+    .slider-btn--next { right: clamp(6px, 3.31cqw, 28px); }
+    .slider-btn:active { scale: 0.96; }
+    .slider-btn[disabled] { opacity: 0; pointer-events: none; }
+    @container (max-width: 520px) {
+      .slider-btn { width: 32px; height: 32px; }
+    }
+
+    /* 6px bars with a 24px tall hit area; the margins give back the padding
+       so the bars sit 36px below the slide, as in the frame */
+    .dots {
+      display: flex;
+      justify-content: center;
+      margin: 27px 0 -9px;
+    }
+    .dot {
+      padding: 9px 6px;
+      border: 0;
+      background: none;
+      cursor: pointer;
+    }
+    .dot::before {
+      content: "";
+      display: block;
+      width: 6px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--dot);
+      transition: width .2s, background-color .2s;
+    }
+    .dot[aria-current="true"]::before {
+      width: 36px;
+      background: var(--text-strong);
+    }
+
+    /* ============ Pattern map (accordion) ============
+       Rows are open in the markup; the script closes all but the first */
+    .patterns {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: var(--measure);
+      margin-inline: auto;
+    }
+    .row {
+      background: var(--bg-surface);
+      border-radius: 16px;
+    }
+    .row-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 12px 12px 18px;
+      border: 0;
+      border-radius: 16px;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    .row-head:focus-visible { outline-offset: -2px; }
+    .row-head > img { flex: none; }
+    .row-title {
+      flex: 1 0 0;
+      min-width: 0;
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 28px;
+      color: var(--text-body);
+    }
+    .row-toggle {
+      flex: none;
+      padding: 8px;
+      border-radius: 10px;
+      transition: background-color .15s;
+    }
+    .row-plus { display: none; }
+    .patterns.is-ready .row:not(.is-open) .row-plus { display: block; }
+    .patterns.is-ready .row:not(.is-open) .row-minus { display: none; }
+
+    .row-panel {
+      display: grid;
+      grid-template-rows: 1fr;
+    }
+    .patterns.is-animated .row-panel { transition: grid-template-rows .28s cubic-bezier(.2, .8, .2, 1); }
+    .patterns.is-ready .row:not(.is-open) .row-panel { grid-template-rows: 0fr; }
+    .row-clip {
+      min-height: 0;
+      overflow: hidden;
+    }
+    .row-body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 0 18px 32px 52px;
+    }
+    .row-desc,
+    .row-tip { color: var(--text-secondary); }
+    .row-body hr {
+      border: 0;
+      border-top: 1px solid var(--bg-chip);
+    }
+    .row-body h4 {
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--text-body);
+    }
+    .row-groups {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 12px;
+    }
+    .row-groups ul {
+      margin-top: 8px;
+      padding-left: 21px;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-secondary);
+    }
+    .row-groups li + li { margin-top: 2px; }
+    .row-link {
+      border: 0;
+      border-radius: 4px;
+      background: none;
+      color: var(--accent);
+      text-align: left;
+      cursor: pointer;
+    }
+    .row-singles {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      list-style: none;
+    }
+    .chips li {
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--bg-chip);
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-body);
+    }
+
+    /* ============ Screenshot ============ */
+    .shot {
+      padding: min(48px, 5.67%);
+      border-radius: clamp(20px, 3.8vw, 32px);
+      background: var(--bg-surface);
+    }
+    .shot img { width: 100%; height: auto; }
+
+    /* ============ Hover (pointer devices only) ============ */
+    @media (hover: hover) {
+      .back:hover,
+      .toc a:hover { color: var(--text-strong); }
+      .text p a:hover { text-decoration-color: currentColor; }
+      .slider-btn:hover { background: rgba(0, 0, 0, 0.1); }
+      .row-head:hover .row-toggle { background: var(--bg-page); }
+      .row-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+    }
+
+    /* ============ Narrow screens: one column, the menu keeps only "Back" ============ */
+    @media (max-width: 959px) {
+      .layout {
+        display: block;
+        max-width: calc(720px + 48px);
+        margin-inline: auto;
+        padding: 72px 24px 80px;
+      }
+      .side {
+        position: static;
+        width: auto;
+        max-width: var(--measure);
+        margin: 0 auto 24px;
+      }
+      .toc { display: none; }
+    }
+    @media (max-width: 719px) {
+      .layout { padding: 68px 16px 64px; }
+      .article { gap: 40px; }
+      .article > section { gap: 28px; }
+      .article h1 { font-size: 26px; line-height: 34px; }
+      .article h2 { font-size: 20px; }
+      .dots { margin-top: 19px; }
+    }
+    @media (max-width: 479px) {
+      .row-body { padding: 0 18px 24px; }
+      .row-groups { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      html { scroll-behavior: smooth; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <a class="logo" href="/" aria-label="Artem Shevliakov, home"><img src="/assets/logo.svg" width="42" height="32" alt=""></a>
+
+  <div class="layout">
+
+    <!-- ===== Side menu ===== -->
+    <nav class="side" aria-label="Article">
+      <a class="back" id="back" href="/writing">Back</a>
+      <ol class="toc" id="toc">
+        <li><a href="#before-you-start" aria-current="location">Before you start</a></li>
+        <li><a href="#service-type">Service type &amp; funnel</a></li>
+        <li><a href="#scenario">Scenario &amp; products</a></li>
+        <li><a href="#patterns">Patterns</a></li>
+        <li><a href="#collect">Collect</a></li>
+        <li><a href="#analyze">Analyze</a></li>
+        <li><a href="#cut">Cut</a></li>
+        <li><a href="#team-check">Team check</a></li>
+        <li><a href="#result">Result</a></li>
+        <li><a href="#mobbin-claude">Mobbin &amp; Claude</a></li>
+      </ol>
+    </nav>
+
+    <main class="article">
+
+      <header class="text">
+        <h1>Finding references and&nbsp;a&nbsp;bit about&nbsp;benchmarking</h1>
+        <p class="meta">5 min&nbsp;read</p>
+      </header>
+
+      <div class="text">
+        <p>Everyone collects references, but&nbsp;too often it&nbsp;ends with a&nbsp;folder of&nbsp;nice-looking screens that does nothing to&nbsp;solve the&nbsp;task. In&nbsp;this guide I’ll show a&nbsp;different way to&nbsp;search: one where every find answers a&nbsp;specific&nbsp;question.</p>
+        <p><strong>A&nbsp;reference</strong> is&nbsp;a&nbsp;single example of&nbsp;someone else’s solution: a&nbsp;screen, a&nbsp;flow or&nbsp;a&nbsp;piece of&nbsp;copy. <strong>Benchmarking</strong> is&nbsp;the&nbsp;process of&nbsp;comparing how different products solve the&nbsp;same task and&nbsp;working out why a&nbsp;solution&nbsp;works.</p>
+        <p>What matters is&nbsp;how a&nbsp;solution works, not only how it&nbsp;looks. Copy the&nbsp;visuals and&nbsp;you get a&nbsp;pretty screen. Understand the&nbsp;logic and&nbsp;you get an&nbsp;idea you can adapt to&nbsp;your own&nbsp;product.</p>
+      </div>
+
+      <!-- ===== Before you start ===== -->
+      <section id="before-you-start">
+        <div class="text">
+          <h2>Three things worth knowing before you&nbsp;start</h2>
+          <p><strong>Goal.</strong> The&nbsp;outcome the&nbsp;user and&nbsp;the&nbsp;business&nbsp;need.</p>
+          <p><strong>Context.</strong> Product type, B2B or&nbsp;B2C, audience experience,&nbsp;devices.</p>
+          <p><strong>Constraints.</strong> Technical, legal and&nbsp;resource limits, plus the&nbsp;client’s expectations. They keep you from searching for&nbsp;the&nbsp;impossible, and&nbsp;later they filter what you’ve&nbsp;collected.</p>
+        </div>
+      </section>
+
+      <!-- ===== Service type and funnel ===== -->
+      <section id="service-type">
+        <div class="text">
+          <h2>Identify the&nbsp;service type and&nbsp;the&nbsp;funnel&nbsp;stage</h2>
+          <p>The&nbsp;service type and&nbsp;the&nbsp;funnel stage define the&nbsp;goal of&nbsp;a&nbsp;screen, and&nbsp;so&nbsp;they define which products are comparable. SaaS onboarding and&nbsp;a&nbsp;store checkout solve different tasks, even if&nbsp;both look like a&nbsp;multi-step&nbsp;form.</p>
+          <p>Below I’ve drawn a&nbsp;simplified funnel for&nbsp;each service&nbsp;type.</p>
+        </div>
+
+        <div class="slider" id="funnels" role="region" aria-roledescription="carousel" aria-label="Funnels by service type">
+          <div class="slider-view">
+            <ul class="slides" tabindex="0" aria-label="Funnel slides">
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="1 of 3: SaaS">
+              <img class="f f-shape" src="/assets/writing/funnel.svg" width="429" height="454" alt="" style="--y:146;--h:454">
+              <span class="f f-sep" style="--y:222"></span>
+              <span class="f f-sep" style="--y:356"></span>
+              <span class="f f-sep" style="--y:490"></span>
+              <h3 class="f f-title" style="--y:60">SaaS</h3>
+              <p class="f f-sub" style="--y:100">Software as&nbsp;a&nbsp;service. Apps and&nbsp;online&nbsp;services</p>
+              <p class="f f-stage" style="--y:172">Onboarding,&nbsp;activation</p>
+              <p class="f f-stage" style="--y:254">Usage&nbsp;→ aha&nbsp;moment</p>
+              <p class="f f-stage f-stage--2" style="--y:278">Freemium&nbsp;→ Paywall&nbsp;→ Free&nbsp;trial</p>
+              <ul class="f f-labels" style="--y:310"><li>Custom flows, business-specific&nbsp;logic</li></ul>
+              <p class="f f-stage f-wrap" style="--y:388;--w:222">Upgrade to&nbsp;a&nbsp;paid plan, recurring&nbsp;payment</p>
+              <ul class="f f-labels" style="--y:444"><li>Payment</li></ul>
+              <p class="f f-stage" style="--y:522">Retention,&nbsp;upsell</p>
+              <ul class="f f-labels" style="--y:554"><li>Account</li></ul>
+              <p class="f f-stage" style="--y:626">Subscription renewal,&nbsp;upgrade</p>
+            </li>
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="2 of 3: E-commerce">
+              <img class="f f-shape" src="/assets/writing/funnel.svg" width="429" height="454" alt="" style="--y:156;--h:454">
+              <span class="f f-sep" style="--y:260"></span>
+              <span class="f f-sep" style="--y:394"></span>
+              <span class="f f-sep" style="--y:504"></span>
+              <h3 class="f f-title" style="--y:50">E-commerce</h3>
+              <p class="f f-sub f-wrap" style="--y:90;--w:345">Stores and&nbsp;any services with a&nbsp;catalog and&nbsp;a&nbsp;process of&nbsp;choosing and&nbsp;buying</p>
+              <p class="f f-stage" style="--y:182">Finding a&nbsp;product, comparing&nbsp;options</p>
+              <ul class="f f-labels" style="--y:214"><li>Catalog</li></ul>
+              <p class="f f-stage" style="--y:292">Building trust in&nbsp;the&nbsp;product,<br>adding to&nbsp;cart</p>
+              <ul class="f f-labels" style="--y:348"><li>Product&nbsp;Page</li></ul>
+              <p class="f f-stage" style="--y:426">Checkout and&nbsp;payment</p>
+              <ul class="f f-labels" style="--y:458"><li>Cart</li><li>Payment</li><li>Identification</li></ul>
+              <p class="f f-stage" style="--y:532">Delivery and&nbsp;pickup</p>
+              <ul class="f f-labels" style="--y:564"><li>Account</li></ul>
+              <p class="f f-stage" style="--y:636">Repeat&nbsp;purchases</p>
+            </li>
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="3 of 3: Services">
+              <img class="f f-shape" src="/assets/writing/funnel-tall.svg" width="429" height="482" alt="" style="--y:132;--h:482">
+              <span class="f f-sep" style="--y:236"></span>
+              <span class="f f-sep" style="--y:394"></span>
+              <span class="f f-sep" style="--y:504"></span>
+              <h3 class="f f-title" style="--y:46">Services</h3>
+              <p class="f f-sub" style="--y:86">Informational websites that sell&nbsp;services</p>
+              <p class="f f-stage" style="--y:158">Finding a&nbsp;service, studying the&nbsp;terms</p>
+              <ul class="f f-labels" style="--y:190"><li>Home</li><li>Catalog</li><li>Portfolio</li><li>Pricing</li><li>Plans</li></ul>
+              <p class="f f-stage f-wrap" style="--y:268;--w:216">Building trust in&nbsp;the&nbsp;company and&nbsp;the&nbsp;service</p>
+              <ul class="f f-labels" style="--y:324"><li>About</li><li>Partners</li><li>Team</li><li>Careers</li></ul>
+              <ul class="f f-labels" style="--y:348"><li>Press</li><li>Blog</li><li>Detail&nbsp;Page</li></ul>
+              <p class="f f-stage" style="--y:426">First contact, first&nbsp;payment</p>
+              <ul class="f f-labels" style="--y:458"><li>Cart</li><li>Direction</li><li>CTA&nbsp;section</li></ul>
+              <p class="f f-stage" style="--y:536">Service&nbsp;delivery</p>
+              <ul class="f f-labels" style="--y:568"><li>Account</li></ul>
+              <p class="f f-stage" style="--y:640">Repeat&nbsp;purchases</p>
+            </li>
+            </ul>
+            <button class="slider-btn slider-btn--prev" type="button" aria-label="Previous slide" disabled><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
+            <button class="slider-btn slider-btn--next" type="button" aria-label="Next slide"><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
+          </div>
+          <div class="dots">
+          <button class="dot" type="button" aria-label="Show slide 1: SaaS" aria-current="true"></button>
+          <button class="dot" type="button" aria-label="Show slide 2: E-commerce"></button>
+          <button class="dot" type="button" aria-label="Show slide 3: Services"></button>
+          </div>
+        </div>
+
+        <div class="text">
+          <p>Once you know the&nbsp;stage, you stop looking for&nbsp;“fintech references” and&nbsp;start looking for&nbsp;“onboarding and&nbsp;activation in&nbsp;SaaS”. The&nbsp;pool of&nbsp;suitable products grows beyond your industry, and&nbsp;the&nbsp;search itself gets more precise: you’re comparing solutions to&nbsp;the&nbsp;same&nbsp;task.</p>
+        </div>
+      </section>
+
+      <!-- ===== Scenario and products ===== -->
+      <section id="scenario">
+        <div class="text">
+          <h2>Describe the&nbsp;scenario and&nbsp;decide whose products to&nbsp;look&nbsp;at</h2>
+          <p>Compare scenarios, not whole products. First describe yours without any interface: what the&nbsp;user wants to&nbsp;get and&nbsp;which steps it&nbsp;takes.</p>
+          <p>Then look for&nbsp;products that already solve it,&nbsp;moving from near to&nbsp;far:</p>
+          <p><strong>Direct competitors.</strong> The&nbsp;same product for&nbsp;the&nbsp;same&nbsp;audience.</p>
+          <p><strong>Adjacent products.</strong> The&nbsp;same category, another price segment or&nbsp;audience.</p>
+          <p><strong>Neighboring fields.</strong> The&nbsp;same mechanic elsewhere: document checks exist in&nbsp;banks, car sharing and&nbsp;home&nbsp;rentals.</p>
+          <p><strong>Market leaders.</strong> From any industry. Their solutions are usually backed by&nbsp;research.</p>
+        </div>
+      </section>
+
+      <!-- ===== Patterns ===== -->
+      <section id="patterns">
+        <div class="text">
+          <h2>Break the&nbsp;task into familiar&nbsp;patterns</h2>
+          <p>Most tasks are assembled from parts that have been solved many times: a&nbsp;catalog, a&nbsp;detail page, a&nbsp;cart. People know how these parts work from other products and&nbsp;expect yours to&nbsp;work the&nbsp;same way (Jakob’s Law). So&nbsp;name the&nbsp;patterns in&nbsp;your task and&nbsp;look for&nbsp;references to&nbsp;each one. Below is&nbsp;a&nbsp;map of&nbsp;the&nbsp;common&nbsp;ones.</p>
+        </div>
+
+        <div class="patterns" id="pattern-map">
+          <div class="row" id="pattern-authentication">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-authentication-head" aria-expanded="true" aria-controls="pattern-authentication-panel">
+                <img src="/assets/writing/patterns/fingerprint.svg" width="24" height="24" alt="">
+                <span class="row-title">Authentication</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-authentication-panel" role="region" aria-labelledby="pattern-authentication-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">Sign-up, sign in&nbsp;and&nbsp;the&nbsp;checks that confirm a&nbsp;user’s&nbsp;identity.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>Signup</h4>
+                      <ul>
+                        <li>via&nbsp;socials</li>
+                        <li>via&nbsp;email</li>
+                        <li>via&nbsp;phone</li>
+                        <li>specific: card/contract&nbsp;number</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>2FA</h4>
+                      <ul>
+                        <li>via&nbsp;email</li>
+                        <li>via&nbsp;phone</li>
+                        <li>authenticator&nbsp;apps</li>
+                        <li>passcode</li>
+                        <li>Touch ID,&nbsp;Face&nbsp;ID</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="row-singles">
+                    <h4>Consents,&nbsp;agreements</h4>
+                    <h4>Login</h4>
+                    <h4>Password&nbsp;reset</h4>
+                    <h4>Identity Verification&nbsp;(KYC)</h4>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4>KYC also used&nbsp;in</h4>
+                    <ul class="chips">
+                      <li>Fintech and&nbsp;crypto</li>
+                      <li>Online&nbsp;betting</li>
+                      <li>Mobile&nbsp;operators</li>
+                      <li>Car&nbsp;rental</li>
+                      <li>Freelance&nbsp;platforms</li>
+                      <li>Telehealth</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-onboarding">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-onboarding-head" aria-expanded="true" aria-controls="pattern-onboarding-panel">
+                <img src="/assets/writing/patterns/rocket.svg" width="24" height="24" alt="">
+                <span class="row-title">Onboarding and&nbsp;Activation</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-onboarding-panel" role="region" aria-labelledby="pattern-onboarding-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">The&nbsp;first-run experience that leads a&nbsp;new user to&nbsp;the&nbsp;product’s core&nbsp;value.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>First&nbsp;screens</h4>
+                      <ul>
+                        <li>Splash&nbsp;screen</li>
+                        <li>Welcome&nbsp;screen</li>
+                        <li>Feature&nbsp;carousel</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Account</h4>
+                      <ul>
+                        <li><button class="row-link" type="button" data-open="pattern-authentication">Authentication</button></li>
+                        <li>Account&nbsp;setup</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Guidance</h4>
+                      <ul>
+                        <li>Getting-started&nbsp;guide</li>
+                        <li>Product tour with&nbsp;tooltips</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4>Activation&nbsp;examples</h4>
+                    <ul class="chips">
+                      <li>Music: first&nbsp;playlist</li>
+                      <li>Fitness: first&nbsp;workout</li>
+                      <li>Messaging: first&nbsp;message</li>
+                      <li>Ride-hailing: first&nbsp;ride</li>
+                      <li>File storage: first shared&nbsp;folder</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-catalog">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-catalog-head" aria-expanded="true" aria-controls="pattern-catalog-panel">
+                <img src="/assets/writing/patterns/catalog.svg" width="24" height="24" alt="">
+                <span class="row-title">Catalog</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-catalog-panel" role="region" aria-labelledby="pattern-catalog-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">A&nbsp;large set of&nbsp;items that users browse, search, filter and&nbsp;sort.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>Structure</h4>
+                      <ul>
+                        <li>Category tree and&nbsp;mega&nbsp;menu</li>
+                        <li>Nested&nbsp;subcategories</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Finding&nbsp;items</h4>
+                      <ul>
+                        <li>Filters and&nbsp;sorting</li>
+                        <li>Search and&nbsp;results&nbsp;page</li>
+                        <li>Item&nbsp;comparison</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Variations</h4>
+                      <ul>
+                        <li>Catalogs of&nbsp;brands, series and&nbsp;collections</li>
+                        <li>Ready-made sets of&nbsp;products: recipes, room&nbsp;designs</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4>Also used&nbsp;in</h4>
+                    <ul class="chips">
+                      <li>Job&nbsp;boards</li>
+                      <li>Real estate&nbsp;listings</li>
+                      <li>Travel&nbsp;booking</li>
+                      <li>Review&nbsp;sites</li>
+                      <li>Library&nbsp;catalogs</li>
+                      <li>Knowledge&nbsp;bases</li>
+                      <li>Task&nbsp;trackers</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-detail">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-detail-head" aria-expanded="true" aria-controls="pattern-detail-panel">
+                <img src="/assets/writing/patterns/pagetext.svg" width="24" height="24" alt="">
+                <span class="row-title">Detail Page</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-detail-panel" role="region" aria-labelledby="pattern-detail-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">The&nbsp;page with full information about one item, where users decide what to&nbsp;do&nbsp;next.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>Options</h4>
+                      <ul>
+                        <li>Variants: size,&nbsp;color</li>
+                        <li>Bundles</li>
+                        <li><button class="row-link" type="button" data-open="pattern-configurator">Configurator and&nbsp;Form</button></li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Content</h4>
+                      <ul>
+                        <li>Text, key facts, tables,&nbsp;reviews</li>
+                        <li>Photos and&nbsp;video</li>
+                        <li>Carousels and&nbsp;accordions</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4>Also used&nbsp;in</h4>
+                    <ul class="chips">
+                      <li>Property&nbsp;listing</li>
+                      <li>Job&nbsp;posting</li>
+                      <li>Hotel&nbsp;page</li>
+                      <li>App store&nbsp;page</li>
+                      <li>Course&nbsp;page</li>
+                      <li>Task&nbsp;card</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-configurator">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-configurator-head" aria-expanded="true" aria-controls="pattern-configurator-panel">
+                <img src="/assets/writing/patterns/input.svg" width="24" height="24" alt="">
+                <span class="row-title">Configurator and&nbsp;Form</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-configurator-panel" role="region" aria-labelledby="pattern-configurator-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">Step-by-step input where each answer shapes the&nbsp;next step and&nbsp;the&nbsp;final&nbsp;result.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>Entering&nbsp;data</h4>
+                      <ul>
+                        <li>Text</li>
+                        <li>Numbers: exact value, estimate or&nbsp;range</li>
+                        <li>Location: address or&nbsp;map</li>
+                        <li>File&nbsp;upload</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Choosing from a&nbsp;list</h4>
+                      <ul>
+                        <li>One&nbsp;option</li>
+                        <li>Several&nbsp;options</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Result</h4>
+                      <ul>
+                        <li>Summary of&nbsp;choices</li>
+                        <li>Submitting the&nbsp;form</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4>Also used&nbsp;in</h4>
+                    <ul class="chips">
+                      <li>Car&nbsp;configurator</li>
+                      <li>Custom&nbsp;furniture</li>
+                      <li>Insurance&nbsp;quote</li>
+                      <li>Tax&nbsp;return</li>
+                      <li>Account&nbsp;opening</li>
+                      <li>Software&nbsp;setup</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-custom">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-custom-head" aria-expanded="true" aria-controls="pattern-custom-panel">
+                <img src="/assets/writing/patterns/process.svg" width="24" height="24" alt="">
+                <span class="row-title">Custom Flow</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-custom-panel" role="region" aria-labelledby="pattern-custom-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">The&nbsp;core flows of&nbsp;a&nbsp;product, built around its own rules and&nbsp;data.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>Work&nbsp;tools</h4>
+                      <ul>
+                        <li>Dashboards</li>
+                        <li>Help&nbsp;desks</li>
+                        <li>Task&nbsp;trackers</li>
+                        <li>CRM and&nbsp;ERP</li>
+                        <li>Learning platforms&nbsp;(LMS)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Services</h4>
+                      <ul>
+                        <li>Booking: calendars, reservations,&nbsp;tickets</li>
+                        <li>Ad&nbsp;platforms</li>
+                        <li>Fintech and&nbsp;banking</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Platforms</h4>
+                      <ul>
+                        <li>Freelance&nbsp;marketplaces</li>
+                        <li>File&nbsp;storage</li>
+                        <li>Intranets</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <p class="row-tip">Start with products of&nbsp;the&nbsp;same type. Then check which patterns from this list they contain: most custom flows still include a&nbsp;catalog, a&nbsp;detail page or&nbsp;a&nbsp;form.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-business">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-business-head" aria-expanded="true" aria-controls="pattern-business-panel">
+                <img src="/assets/writing/patterns/luggage.svg" width="24" height="24" alt="">
+                <span class="row-title">Business-specific flows</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-business-panel" role="region" aria-labelledby="pattern-business-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">Product types with conventions that users already&nbsp;know.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>Communication</h4>
+                      <ul>
+                        <li>Messaging&nbsp;apps</li>
+                        <li>Social&nbsp;networks</li>
+                        <li>Dating&nbsp;apps</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Maps and&nbsp;transport</h4>
+                      <ul>
+                        <li>Maps and&nbsp;navigation</li>
+                        <li>Taxi and&nbsp;car&nbsp;sharing</li>
+                        <li>Logistics and&nbsp;routing</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Media and&nbsp;games</h4>
+                      <ul>
+                        <li>Photo and&nbsp;video&nbsp;editors</li>
+                        <li>Video and&nbsp;music&nbsp;players</li>
+                        <li>Games</li>
+                        <li>Betting and&nbsp;casino&nbsp;apps</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Trading</h4>
+                      <ul>
+                        <li>Stock and&nbsp;crypto&nbsp;exchanges</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <p class="row-tip">Users learned these products from the&nbsp;market leaders and&nbsp;expect yours to&nbsp;work the&nbsp;same way. Start with direct&nbsp;competitors.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-cart">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-cart-head" aria-expanded="true" aria-controls="pattern-cart-panel">
+                <img src="/assets/writing/patterns/cart.svg" width="24" height="24" alt="">
+                <span class="row-title">Cart</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-cart-panel" role="region" aria-labelledby="pattern-cart-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">A&nbsp;place to&nbsp;collect items, review and&nbsp;change them, then confirm them all at&nbsp;once.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>Before&nbsp;checkout</h4>
+                      <ul>
+                        <li>Mini&nbsp;cart</li>
+                        <li>Cart&nbsp;page</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Checkout</h4>
+                      <ul>
+                        <li>Checkout&nbsp;page</li>
+                        <li>Add-ons: insurance, carry-in&nbsp;service</li>
+                        <li>Delivery: pickup point or&nbsp;courier</li>
+                        <li><button class="row-link" type="button" data-open="pattern-authentication">Authentication</button></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4>Also used&nbsp;in</h4>
+                    <ul class="chips">
+                      <li>Trip booking: flight, hotel,&nbsp;transfer</li>
+                      <li>Quote request&nbsp;(B2B)</li>
+                      <li>Repeat grocery&nbsp;order</li>
+                      <li>Bundle&nbsp;builder</li>
+                      <li>Bulk file&nbsp;actions</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-payment">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-payment-head" aria-expanded="true" aria-controls="pattern-payment-panel">
+                <img src="/assets/writing/patterns/creditcard.svg" width="24" height="24" alt="">
+                <span class="row-title">Payment</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-payment-panel" role="region" aria-labelledby="pattern-payment-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">Choosing a&nbsp;payment method, confirming the&nbsp;amount and&nbsp;seeing a&nbsp;clear&nbsp;result.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>Payment&nbsp;method</h4>
+                      <ul>
+                        <li>New or&nbsp;saved&nbsp;card</li>
+                        <li>Pay later: credit or&nbsp;installments</li>
+                        <li>Local payment&nbsp;methods</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Steps</h4>
+                      <ul>
+                        <li>Entering payment&nbsp;details</li>
+                        <li>Payment result: success or&nbsp;failure</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4>Also used&nbsp;in</h4>
+                    <ul class="chips">
+                      <li>Subscriptions</li>
+                      <li>In-app&nbsp;purchases</li>
+                      <li>Wallet&nbsp;top-ups</li>
+                      <li>Utility&nbsp;bills</li>
+                      <li>Money&nbsp;transfers</li>
+                      <li>Invoices and&nbsp;payment&nbsp;links</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-account">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-account-head" aria-expanded="true" aria-controls="pattern-account-panel">
+                <img src="/assets/writing/patterns/usercircle.svg" width="24" height="24" alt="">
+                <span class="row-title">Account</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-account-panel" role="region" aria-labelledby="pattern-account-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc">A&nbsp;user’s personal space for&nbsp;profile, security, billing and&nbsp;preferences.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4>Personal</h4>
+                      <ul>
+                        <li>Profile</li>
+                        <li>Order&nbsp;history</li>
+                        <li>Favorites</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Loyalty</h4>
+                      <ul>
+                        <li>Wallet and&nbsp;balance</li>
+                        <li>Bonus points and&nbsp;loyalty&nbsp;cards</li>
+                        <li>Gift cards and&nbsp;member&nbsp;status</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4>Preferences and&nbsp;help</h4>
+                      <ul>
+                        <li>Settings</li>
+                        <li>Notifications</li>
+                        <li>Support&nbsp;requests</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4>Also used&nbsp;in</h4>
+                    <ul class="chips">
+                      <li>SaaS workspace: billing,&nbsp;team</li>
+                      <li>Store account: orders,&nbsp;addresses</li>
+                      <li>Public profile: author,&nbsp;seller</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <script>
+          /* Pattern map: close all rows but the first, then toggle on click */
+          (function () {
+            var root = document.getElementById('pattern-map');
+            var rows = [].slice.call(root.querySelectorAll('.row'));
+            var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function set(row, open) {
+              row.classList.toggle('is-open', open);
+              row.querySelector('.row-head').setAttribute('aria-expanded', String(open));
+              var panel = row.querySelector('.row-panel');
+              if (open) panel.removeAttribute('inert'); else panel.setAttribute('inert', '');
+            }
+
+            rows.forEach(function (row, i) { set(row, i === 0); });
+            root.classList.add('is-ready');
+            requestAnimationFrame(function () {
+              requestAnimationFrame(function () { root.classList.add('is-animated'); });
+            });
+
+            root.addEventListener('click', function (e) {
+              var link = e.target.closest('.row-link');
+              if (link) {
+                var target = document.getElementById(link.getAttribute('data-open'));
+                var head = target.querySelector('.row-head');
+                set(target, true);
+                head.focus({ preventScroll: true });
+                head.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+                return;
+              }
+              var clicked = e.target.closest('.row-head');
+              if (!clicked) return;
+              var row = clicked.closest('.row');
+              set(row, !row.classList.contains('is-open'));
+            });
+          })();
+        </script>
+
+        <div class="text">
+          <p>A&nbsp;catalog is&nbsp;needed where people don’t know exactly what they’re looking for: they narrow the&nbsp;selection step by&nbsp;step until they reach the&nbsp;right item. If&nbsp;they know the&nbsp;name, search is&nbsp;enough.</p>
+          <p><strong>Example.</strong> We’re designing a&nbsp;trip planning app. A&nbsp;tourist doesn’t know what the&nbsp;city offers, so&nbsp;the&nbsp;list of&nbsp;places is&nbsp;a&nbsp;catalog. A&nbsp;place page with photos and&nbsp;opening hours is&nbsp;a&nbsp;detail page. The&nbsp;places added to&nbsp;the&nbsp;trip work like a&nbsp;cart. Now references can come from online stores and&nbsp;booking services, not only from other travel&nbsp;apps.</p>
+          <p><strong>Exception.</strong> In&nbsp;niches with complex business logic (geo services, social networks, messengers) abstraction helps less. There you look for&nbsp;proven solutions from direct analogs: the&nbsp;systems are too complex to&nbsp;invent the&nbsp;connections from&nbsp;scratch.</p>
+          <p>Behind this is&nbsp;<strong>Jakob’s Law</strong>: people spend most of&nbsp;their time in&nbsp;other products and&nbsp;expect yours to&nbsp;work the&nbsp;same way. Structure, behavior and&nbsp;controls should feel familiar; your own visual style doesn’t get in&nbsp;the&nbsp;way of&nbsp;that.</p>
+        </div>
+      </section>
+
+      <!-- ===== Collect ===== -->
+      <section id="collect">
+        <div class="text">
+          <h2>Collect everything that catches your&nbsp;eye</h2>
+          <p>Save everything you like and&nbsp;don’t judge it&nbsp;yet. Filter too early and&nbsp;you miss an&nbsp;unexpected find from another&nbsp;niche.</p>
+          <p>Combine sources. Walk through the&nbsp;flows yourself to&nbsp;see errors, emails and&nbsp;what happens on&nbsp;return. Use screen libraries like Mobbin to&nbsp;compare one pattern across dozens of&nbsp;products. Check usability research from Baymard Institute and&nbsp;Nielsen Norman&nbsp;Group.</p>
+          <p>Label each screen right away: product, step,&nbsp;pattern.</p>
+        </div>
+      </section>
+
+      <!-- ===== Analyze ===== -->
+      <section id="analyze">
+        <div class="text">
+          <h2>Analyze what you&nbsp;collected</h2>
+          <p>A&nbsp;reference without a&nbsp;note is&nbsp;just a&nbsp;picture. For&nbsp;each one, write down what fits your task, what doesn’t and&nbsp;why.</p>
+          <p>Ask three questions: which user and&nbsp;business task does it&nbsp;solve, what happens before and&nbsp;after it,&nbsp;and&nbsp;is&nbsp;it&nbsp;made for&nbsp;an&nbsp;audience like&nbsp;yours?</p>
+          <p>Compare flows by&nbsp;the&nbsp;same criteria in&nbsp;a&nbsp;product&nbsp;×&nbsp;criterion table. What everyone shares is&nbsp;the&nbsp;market norm. Where solutions differ is&nbsp;room for&nbsp;your own&nbsp;hypotheses.</p>
+        </div>
+      </section>
+
+      <!-- ===== Cut ===== -->
+      <section id="cut">
+        <div class="text">
+          <h2>Cut what you don’t&nbsp;need</h2>
+          <p>Run what you’ve collected through two&nbsp;filters.</p>
+          <p><strong>Constraints.</strong> Remove what doesn’t fit the&nbsp;technical, legal and&nbsp;resource limits, however well it&nbsp;works for&nbsp;others.</p>
+          <p><strong>Value and&nbsp;cost.</strong> Weigh how much a&nbsp;solution helps the&nbsp;user against what it&nbsp;costs to&nbsp;build. A&nbsp;large feature with no&nbsp;clear value is&nbsp;the&nbsp;first to&nbsp;go.</p>
+        </div>
+      </section>
+
+      <!-- ===== Team check ===== -->
+      <section id="team-check">
+        <div class="text">
+          <h2>Check your conclusions with the&nbsp;team</h2>
+          <p>One person’s selection stays a&nbsp;hypothesis until others have seen it. Show the&nbsp;analysis to&nbsp;the&nbsp;product manager, the&nbsp;developers and&nbsp;the&nbsp;client: they know priorities and&nbsp;constraints you may&nbsp;not.</p>
+          <p>Benchmarks don’t prove a&nbsp;solution will work for&nbsp;you. The&nbsp;final check is&nbsp;user testing and&nbsp;analytics after&nbsp;launch.</p>
+        </div>
+      </section>
+
+      <!-- ===== Result ===== -->
+      <section id="result">
+        <div class="text">
+          <h2>What you end up&nbsp;with</h2>
+          <p>A&nbsp;list of&nbsp;the&nbsp;patterns the&nbsp;task is&nbsp;made of,&nbsp;a&nbsp;product&nbsp;×&nbsp;criterion table, annotated references (what you take, what you rejected and&nbsp;why) and&nbsp;a&nbsp;list of&nbsp;questions nobody asked when the&nbsp;task was first&nbsp;discussed.</p>
+        </div>
+      </section>
+
+      <!-- ===== Mobbin and Claude ===== -->
+      <section id="mobbin-claude">
+        <div class="text">
+          <h2>Doing it&nbsp;faster with Mobbin and&nbsp;Claude</h2>
+          <p>Mobbin has an&nbsp;MCP server, so&nbsp;Claude can search its library of&nbsp;real screens and&nbsp;flows for&nbsp;me. I&nbsp;describe the&nbsp;task, send a&nbsp;screenshot or&nbsp;attach a&nbsp;brief, and&nbsp;get examples from other products with links back to&nbsp;Mobbin.</p>
+          <p>To&nbsp;keep every search in&nbsp;the&nbsp;order of&nbsp;this guide, I&nbsp;packed the&nbsp;steps into a&nbsp;Claude skill. It&nbsp;turns a&nbsp;task into search queries, checks each result against one criterion and&nbsp;says what it&nbsp;did not&nbsp;find.</p>
+          <p>It&nbsp;speeds up&nbsp;collecting, not thinking. Notes, comparison and&nbsp;cuts are still my&nbsp;job.</p>
+        </div>
+
+        <figure class="shot">
+          <img src="/assets/writing/mobbin-connector.png" width="750" height="517" alt="The Mobbin connector page in Claude: connected, with the tools search_flows, search_screens and search_sections" loading="lazy">
+        </figure>
+      </section>
+
+      <!-- ===== Sources ===== -->
+      <section id="sources">
+        <div class="text">
+          <h2>Sources</h2>
+          <p><a href="https://dsgners.ru/ancora/34932-benchmarking-kak-uchitsya-u-konkurentov-ne-kopiruya-ih">Benchmarking: how to&nbsp;learn from competitors without copying them</a>, Ancora (in&nbsp;Russian).</p>
+          <p><a href="https://www.nngroup.com/videos/jakobs-law-internet-ux/">Jakob’s Law of&nbsp;Internet User Experience</a>, Jakob Nielsen, Nielsen Norman&nbsp;Group.</p>
+          <p>The&nbsp;funnel classification and&nbsp;the&nbsp;pattern map come from my&nbsp;mentor.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* "Back" returns to the Writings page in the language the reader came from */
+      var from = document.referrer.match(/^https?:\/\/[^/]+(\/(?:de|cs|ru)\/writing)\/?$/);
+      if (from && document.referrer.indexOf(location.origin) === 0) document.getElementById('back').href = from[1];
+
+      /* Side menu: mark the section that is being read */
+      var links = [].slice.call(document.querySelectorAll('#toc a'));
+      var sections = links.map(function (a) { return document.getElementById(a.hash.slice(1)); });
+      var spyQueued = false;
+      function spy() {
+        spyQueued = false;
+        var current = 0;
+        sections.forEach(function (s, i) { if (s.getBoundingClientRect().top <= 120) current = i; });
+        links.forEach(function (a, i) {
+          if (i === current) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+        });
+      }
+      window.addEventListener('scroll', function () {
+        if (!spyQueued) { spyQueued = true; requestAnimationFrame(spy); }
+      }, { passive: true });
+      spy();
+
+      /* Funnel slider: arrows, dots and swipe share one scroll position */
+      var slider = document.getElementById('funnels');
+      var track = slider.querySelector('.slides');
+      var slides = [].slice.call(track.children);
+      var dots = [].slice.call(slider.querySelectorAll('.dot'));
+      var prev = slider.querySelector('.slider-btn--prev');
+      var next = slider.querySelector('.slider-btn--next');
+      var index = 0;
+
+      function step() { return slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : track.clientWidth; }
+      function go(i) {
+        i = Math.max(0, Math.min(slides.length - 1, i));
+        track.scrollTo({ left: i * step(), behavior: reduce ? 'auto' : 'smooth' });
+      }
+      function update() {
+        var i = Math.round(track.scrollLeft / step());
+        if (i === index) return;
+        index = i;
+        dots.forEach(function (d, n) {
+          if (n === index) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current');
+        });
+        var active = document.activeElement;
+        prev.disabled = index === 0;
+        next.disabled = index === slides.length - 1;
+        if (active === prev && prev.disabled) next.focus();
+        if (active === next && next.disabled) prev.focus();
+      }
+      var sliderQueued = false;
+      track.addEventListener('scroll', function () {
+        if (!sliderQueued) { sliderQueued = true; requestAnimationFrame(function () { sliderQueued = false; update(); }); }
+      }, { passive: true });
+      prev.addEventListener('click', function () { go(index - 1); });
+      next.addEventListener('click', function () { go(index + 1); });
+      dots.forEach(function (d, n) { d.addEventListener('click', function () { go(n); }); });
+    })();
+  </script>
+</body>
+</html>

@@ -117,7 +117,8 @@ def translate(text, lang, strings, page, used):
 
     def href_sub(m):
         path = m.group(1)
-        if path.startswith('/assets/'):
+        # assets are shared; articles under /writing/ exist in English only
+        if path.startswith('/assets/') or path.startswith('/writing/'):
             return m.group(0)
         return f'href="/{lang}{"" if path == "/" else path}"'
 
