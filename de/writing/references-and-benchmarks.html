@@ -29,6 +29,7 @@
       --text-funnel-alt: #818487;
       --accent: #4379d3;
       --dot: #d1d2d3;
+      --link-line: #c4c6c8;
 
       /* Type */
       --font-body: "Inter Tight", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -155,6 +156,13 @@
     }
     .text p { text-wrap: pretty; }
     .text p + p { margin-top: 16px; }
+    .text p a {
+      text-decoration: underline;
+      text-decoration-color: var(--link-line);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      transition: text-decoration-color .15s;
+    }
 
     /* ============ Funnel slider ============
        Each slide is drawn on a 846 x 710 stage. --u is one stage pixel:
@@ -510,6 +518,7 @@
     @media (hover: hover) {
       .back:hover,
       .toc a:hover { color: var(--text-strong); }
+      .text p a:hover { text-decoration-color: currentColor; }
       .slider-btn:hover { background: rgba(0, 0, 0, 0.1); }
       .row-head:hover .row-toggle { background: var(--bg-page); }
       .row-link:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -1657,6 +1666,16 @@ This applies at any scale.
           })();
         </script>
 
+      </section>
+
+      <!-- ===== Sources ===== -->
+      <section id="sources">
+        <div class="text">
+          <h2 data-i18n="art.sources">Quellen</h2>
+          <p data-i18n="art.benchmarking-how-to-learn-from"><a href="https://dsgners.ru/ancora/34932-benchmarking-kak-uchitsya-u-konkurentov-ne-kopiruya-ih">Benchmarking: Wie&nbsp;man von&nbsp;Wettbewerbern lernt, ohne sie zu&nbsp;kopieren</a>, Ancora (auf&nbsp;Russisch).</p>
+          <p data-i18n="art.jakob-s-law-of-internet"><a href="https://www.nngroup.com/videos/jakobs-law-internet-ux/">Jakob’s Law of&nbsp;Internet User Experience</a>, Jakob Nielsen, Nielsen Norman Group (auf&nbsp;Englisch).</p>
+          <p data-i18n="art.the-funnel-classification-and-the">Die&nbsp;Funnel-Klassifikation und&nbsp;die&nbsp;Pattern-Karte stammen von&nbsp;meinem&nbsp;Mentor.</p>
+        </div>
       </section>
 
     </main>
