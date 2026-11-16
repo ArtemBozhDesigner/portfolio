@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title data-i18n="meta.article.title">Hledání referencí a trochu o benchmarkingu – Artem Shevliakov</title>
+  <meta name="description" content="Návod, jak hledat designové reference tak, aby každý nález odpovídal na konkrétní otázku: typ služby, fáze trychtýře, scénář, vzory, analýza a škrty." data-i18n-attrs="content:meta.article.description">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Inter+Tight:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/assets/lang-switcher.css">
+
+  <style>
+    /* ============ Tokens (from Figma) ============ */
+    :root {
+      color-scheme: light;
+
+      /* Color */
+      --bg-page: #fafafa;
+      --bg-surface: #ffffff;
+      --bg-chip: #f8f8f9;
+      --text-strong: #141516;
+      --text-body: #36383a;
+      --text-secondary: #5b5e61;
+      --text-meta: #74777a;
+      --text-funnel-sub: #9c9ea0;
+      --text-funnel-alt: #818487;
+      --accent: #4379d3;
+      --dot: #d1d2d3;
+
+      /* Type */
+      --font-body: "Inter Tight", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+      /* Layout: 846px column for visuals, 630px measure for text; the side menu is
+         156px in the frame and gets at least 176px so the Russian labels stay on one line */
+      --column: 846px;
+      --measure: 630px;
+      --edge: clamp(12px, 5.7vw, 80px);
+
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: inherit; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-page);
+      color: var(--text-body);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 24px;
+      letter-spacing: 0.01em;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; letter-spacing: inherit; color: inherit; }
+    strong { font-weight: 500; }
+    :focus-visible { outline: 2px solid var(--text-strong); outline-offset: 3px; }
+
+    /* ============ Logo ============ */
+    .logo {
+      position: absolute;
+      top: calc(env(safe-area-inset-top, 0px) + 15px);
+      left: var(--edge);
+      z-index: 11;
+      display: block;
+      width: 42px;
+      height: 32px;
+    }
+
+    /* ============ Layout ============
+       Side menu on the left, the column centered on the page */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(176px, 1fr) minmax(0, var(--column)) minmax(0, 1fr);
+      column-gap: 24px;
+      padding: 100px var(--edge) 96px;
+    }
+
+    /* ============ Side menu ============ */
+    .side {
+      position: sticky;
+      top: calc(env(safe-area-inset-top, 0px) + 32px);
+      align-self: start;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 24px;
+    }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-meta);
+      transition: color .15s;
+    }
+    .back::before {
+      content: "";
+      width: 20px;
+      height: 20px;
+      background: currentColor;
+      -webkit-mask: url(/assets/icons/arrow-left.svg) center / 20px 20px no-repeat;
+      mask: url(/assets/icons/arrow-left.svg) center / 20px 20px no-repeat;
+    }
+    .toc {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .toc a {
+      display: block;
+      color: var(--text-meta);
+      transition: color .15s;
+    }
+    .toc a[aria-current] { color: var(--text-strong); }
+
+    /* ============ Article ============ */
+    .article {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+      min-width: 0;
+    }
+    .article > section {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 32px);
+    }
+    .text {
+      width: 100%;
+      max-width: var(--measure);
+      margin-inline: auto;
+    }
+    .article h1 {
+      font-weight: 500;
+      font-size: 32px;
+      line-height: 48px;
+      color: var(--text-strong);
+    }
+    .meta {
+      margin-top: 12px;
+      color: var(--text-meta);
+    }
+    .article h2 {
+      font-weight: 500;
+      font-size: 21px;
+      line-height: 28px;
+      color: var(--text-strong);
+      margin-bottom: 16px;
+    }
+    .text p { text-wrap: pretty; }
+    .text p + p { margin-top: 16px; }
+
+    /* ============ Funnel slider ============
+       Each slide is drawn on a 846 x 710 stage. --u is one stage pixel:
+       1px while the stage fits, smaller once the slider is narrower than the funnel */
+    .slider { container-type: inline-size; }
+    .slider-view {
+      --u: min(1px, calc(100cqw / 464));
+      position: relative;
+    }
+    .slides {
+      display: flex;
+      gap: 16px;
+      list-style: none;
+      overflow-x: auto;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x mandatory;
+      scrollbar-width: none;
+      border-radius: clamp(20px, 3.8cqw, 32px);
+    }
+    .slides::-webkit-scrollbar { display: none; }
+    .slide {
+      position: relative;
+      flex: 0 0 100%;
+      height: calc(710 * var(--u));
+      overflow: hidden;
+      background: var(--bg-surface);
+      border-radius: inherit;
+      scroll-snap-align: center;
+      scroll-snap-stop: always;
+    }
+    .f {
+      position: absolute;
+      top: calc(var(--y) * var(--u));
+      left: 50%;
+      transform: translateX(-50%);
+      width: max-content;
+      max-width: none;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .f-wrap {
+      width: calc(var(--w) * max(var(--u), 0.8px));
+      white-space: normal;
+    }
+    .f-shape {
+      width: calc(429 * var(--u));
+      height: calc(var(--h) * var(--u));
+    }
+    .f-sep {
+      width: calc(420 * var(--u));
+      height: calc(6 * var(--u));
+      background: var(--bg-surface);
+    }
+    .f-title {
+      font-weight: 500;
+      font-size: max(calc(24 * var(--u)), 18px);
+      line-height: 1.3333;
+      color: var(--text-strong);
+    }
+    .f-sub {
+      font-size: max(calc(15 * var(--u)), 12px);
+      line-height: 1.3333;
+      color: var(--text-funnel-sub);
+    }
+    .f-stage {
+      font-size: max(calc(17 * var(--u)), 13px);
+      line-height: 1.4118;
+      color: var(--text-body);
+    }
+    .f-stage--2 { color: var(--text-funnel-alt); }
+    .f-labels {
+      display: flex;
+      gap: calc(12 * var(--u));
+      list-style: none;
+      font-size: max(calc(15 * var(--u)), 12px);
+      line-height: 1.3333;
+      color: var(--accent);
+    }
+
+    .slider-btn {
+      position: absolute;
+      top: calc(355 * var(--u));
+      translate: 0 -50%;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border: 0;
+      border-radius: 999px;
+      background: rgba(0, 0, 0, 0.06);
+      cursor: pointer;
+      transition: background-color .15s, opacity .15s, scale .15s;
+    }
+    .slider-btn img { width: 20px; height: 20px; }
+    .slider-btn--prev { left: clamp(6px, 3.31cqw, 28px); }
+    .slider-btn--prev img { rotate: 180deg; }
+    .slider-btn--next { right: clamp(6px, 3.31cqw, 28px); }
+    .slider-btn:active { scale: 0.96; }
+    .slider-btn[disabled] { opacity: 0; pointer-events: none; }
+    @container (max-width: 520px) {
+      .slider-btn { width: 32px; height: 32px; }
+    }
+
+    /* 6px bars with a 24px tall hit area; the margins give back the padding
+       so the bars sit 36px below the slide, as in the frame */
+    .dots {
+      display: flex;
+      justify-content: center;
+      margin: 27px 0 -9px;
+    }
+    .dot {
+      padding: 9px 6px;
+      border: 0;
+      background: none;
+      cursor: pointer;
+    }
+    .dot::before {
+      content: "";
+      display: block;
+      width: 6px;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--dot);
+      transition: width .2s, background-color .2s;
+    }
+    .dot[aria-current="true"]::before {
+      width: 36px;
+      background: var(--text-strong);
+    }
+
+    /* ============ Pattern map (accordion) ============
+       Rows are open in the markup; the script closes all but the first */
+    .patterns {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: var(--measure);
+      margin-inline: auto;
+    }
+    .row {
+      background: var(--bg-surface);
+      border-radius: 16px;
+    }
+    .row-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 12px 12px 12px 18px;
+      border: 0;
+      border-radius: 16px;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    .row-head:focus-visible { outline-offset: -2px; }
+    .row-head > img { flex: none; }
+    .row-title {
+      flex: 1 0 0;
+      min-width: 0;
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 28px;
+      color: var(--text-body);
+    }
+    .row-toggle {
+      flex: none;
+      padding: 8px;
+      border-radius: 10px;
+      transition: background-color .15s;
+    }
+    .row-plus { display: none; }
+    .patterns.is-ready .row:not(.is-open) .row-plus { display: block; }
+    .patterns.is-ready .row:not(.is-open) .row-minus { display: none; }
+
+    .row-panel {
+      display: grid;
+      grid-template-rows: 1fr;
+    }
+    .patterns.is-animated .row-panel { transition: grid-template-rows .28s cubic-bezier(.2, .8, .2, 1); }
+    .patterns.is-ready .row:not(.is-open) .row-panel { grid-template-rows: 0fr; }
+    .row-clip {
+      min-height: 0;
+      overflow: hidden;
+    }
+    .row-body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 0 18px 32px 52px;
+    }
+    .row-desc,
+    .row-tip { color: var(--text-secondary); }
+    .row-body hr {
+      border: 0;
+      border-top: 1px solid var(--bg-chip);
+    }
+    .row-body h4 {
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--text-body);
+    }
+    .row-groups {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px 12px;
+    }
+    .row-groups ul {
+      margin-top: 8px;
+      padding-left: 21px;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-secondary);
+    }
+    .row-groups li + li { margin-top: 2px; }
+    .row-link {
+      border: 0;
+      border-radius: 4px;
+      background: none;
+      color: var(--accent);
+      text-align: left;
+      cursor: pointer;
+    }
+    .row-singles {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      list-style: none;
+    }
+    .chips li {
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--bg-chip);
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-body);
+    }
+
+    /* ============ Skill file ============
+       Without the script the code area simply scrolls */
+    .skill-group {
+      width: 100%;
+      max-width: var(--measure);
+      margin-inline: auto;
+    }
+    .skill {
+      border-radius: 16px;
+      background: var(--bg-surface);
+    }
+    .skill-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 12px 12px 18px;
+      border-bottom: 1px solid var(--bg-chip);
+    }
+    .skill-name {
+      flex: 1 0 0;
+      min-width: 0;
+      font-weight: 500;
+      font-size: 16px;
+      line-height: 24px;
+      color: var(--text-body);
+      overflow-wrap: anywhere;
+    }
+    .skill-btn {
+      flex: none;
+      padding: 6px 12px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--bg-chip);
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-body);
+      cursor: pointer;
+      transition: background-color .15s;
+    }
+    .skill-code {
+      position: relative;
+      max-height: 316px;
+      overflow: auto;
+    }
+    .skill-code:focus-visible { outline-offset: -2px; }
+    .skill-code pre {
+      padding: 16px 18px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 20px;
+      letter-spacing: 0;
+      color: var(--text-body);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .skill.is-ready:not(.is-open) .skill-code { overflow: hidden; }
+    .skill.is-ready:not(.is-open) .skill-code::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 96px;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--bg-surface));
+      pointer-events: none;
+    }
+    .skill.is-open .skill-code { max-height: min(70vh, 640px); }
+    .skill-more {
+      display: block;
+      width: 100%;
+      padding: 12px 18px;
+      border: 0;
+      border-top: 1px solid var(--bg-chip);
+      border-radius: 0 0 16px 16px;
+      background: none;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-meta);
+      cursor: pointer;
+      transition: color .15s;
+    }
+    .skill-more:focus-visible { outline-offset: -2px; }
+    .note {
+      margin: 12px 18px 0;
+      text-wrap: pretty;
+      font-size: 14px;
+      line-height: 20px;
+      color: var(--text-meta);
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /* ============ Screenshot ============ */
+    .shot {
+      padding: min(48px, 5.67%);
+      border-radius: clamp(20px, 3.8vw, 32px);
+      background: var(--bg-surface);
+    }
+    .shot img { width: 100%; height: auto; }
+
+    /* ============ Hover (pointer devices only) ============ */
+    @media (hover: hover) {
+      .back:hover,
+      .toc a:hover { color: var(--text-strong); }
+      .slider-btn:hover { background: rgba(0, 0, 0, 0.1); }
+      .row-head:hover .row-toggle { background: var(--bg-page); }
+      .row-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+      .skill-btn:hover { background: #f0f0f1; }
+      .skill-more:hover { color: var(--text-strong); }
+    }
+
+    /* ============ Narrow screens: one column, the menu keeps only "Back" ============ */
+    @media (max-width: 959px) {
+      .layout {
+        display: block;
+        max-width: calc(720px + 48px);
+        margin-inline: auto;
+        padding: 72px 24px 80px;
+      }
+      .side {
+        position: static;
+        width: auto;
+        max-width: var(--measure);
+        margin: 0 auto 24px;
+      }
+      .toc { display: none; }
+      .lang { position: absolute; }
+    }
+    @media (max-width: 719px) {
+      .layout { padding: 68px 16px 64px; }
+      .article { gap: 40px; }
+      .article > section { gap: 28px; }
+      .article h1 { font-size: 26px; line-height: 34px; }
+      .article h2 { font-size: 20px; }
+      .dots { margin-top: 19px; }
+    }
+    @media (max-width: 479px) {
+      .row-body { padding: 0 18px 24px; }
+      .row-groups { grid-template-columns: minmax(0, 1fr); }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      html { scroll-behavior: smooth; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <a class="logo" href="/cs" aria-label="Artem Shevliakov, úvodní stránka" data-i18n-attrs="aria-label:logo.label"><img src="/assets/logo.svg" width="42" height="32" alt=""></a>
+
+  <!-- lang-switcher:start -->
+  <div class="lang" data-lang>
+    <button class="lang-button" type="button" aria-expanded="false" aria-controls="lang-menu" aria-label="Jazyk: Čeština">
+      <span class="lang-globe" aria-hidden="true"></span>
+      <span class="lang-code" aria-hidden="true">CS</span>
+    </button>
+    <div class="lang-menu" id="lang-menu" hidden>
+      <a class="lang-item" href="/writing/references-and-benchmarks" hreflang="en" lang="en">English</a>
+      <a class="lang-item" href="/de/writing/references-and-benchmarks" hreflang="de" lang="de">Deutsch</a>
+      <a class="lang-item" href="/cs/writing/references-and-benchmarks" hreflang="cs" lang="cs" aria-current="true">Čeština</a>
+      <a class="lang-item" href="/ru/writing/references-and-benchmarks" hreflang="ru" lang="ru">Русский</a>
+    </div>
+  </div>
+  <!-- lang-switcher:end -->
+
+  <div class="layout">
+
+    <!-- ===== Side menu ===== -->
+    <nav class="side" aria-label="Článek" data-i18n-attrs="aria-label:art.nav.label">
+      <a class="back" id="back" href="/cs/writing" data-i18n="art.back">Zpět</a>
+      <ol class="toc" id="toc">
+        <li><a href="#before-you-start" aria-current="location" data-i18n="art.before-you-start">Než&nbsp;začnete</a></li>
+        <li><a href="#service-type" data-i18n="art.service-type-funnel">Typ služby a&nbsp;trychtýř</a></li>
+        <li><a href="#scenario" data-i18n="art.scenario-products">Scénář a&nbsp;produkty</a></li>
+        <li><a href="#patterns" data-i18n="art.familiar-patterns">Známé vzory</a></li>
+        <li><a href="#collect" data-i18n="art.collect-references">Sběr referencí</a></li>
+        <li><a href="#analyze" data-i18n="art.analyze-findings">Analýza nálezů</a></li>
+        <li><a href="#cut" data-i18n="art.cut-extras">Škrtání zbytečného</a></li>
+        <li><a href="#team-check" data-i18n="art.team-check">Kontrola s&nbsp;týmem</a></li>
+        <li><a href="#result" data-i18n="art.end-result">Konečný výsledek</a></li>
+        <li><a href="#mobbin-claude" data-i18n="art.mobbin-claude">Mobbin a&nbsp;Claude</a></li>
+      </ol>
+    </nav>
+
+    <main class="article">
+
+      <header class="text">
+        <h1 data-i18n="writing.note1.title">Hledání referencí a&nbsp;trochu o&nbsp;benchmarkingu</h1>
+        <p class="meta" data-i18n="art.5-min-read">5 min&nbsp;čtení</p>
+      </header>
+
+      <div class="text">
+        <p data-i18n="art.everyone-collects-references-but-too">Reference sbírá každý, ale&nbsp;až&nbsp;příliš často to&nbsp;skončí složkou hezkých obrazovek, která s&nbsp;řešením úkolu nijak nepomůže. V&nbsp;tomto návodu ukážu jiný způsob hledání: takový, kde každý nález odpovídá na&nbsp;konkrétní&nbsp;otázku.</p>
+        <p data-i18n="art.a-reference-is-a-single"><strong>Reference</strong> je&nbsp;jeden konkrétní příklad cizího řešení: obrazovka, flow nebo kus textu. <strong>Benchmarking</strong> je&nbsp;proces, při&nbsp;kterém porovnáváte, jak různé produkty řeší stejný úkol, a&nbsp;zjišťujete, proč dané řešení&nbsp;funguje.</p>
+        <p data-i18n="art.what-matters-is-how-a">Důležité je,&nbsp;jak řešení funguje, nejen jak vypadá. Zkopírujete vizuál a&nbsp;získáte hezkou obrazovku. Pochopíte logiku a&nbsp;získáte nápad, který můžete přizpůsobit vlastnímu&nbsp;produktu.</p>
+      </div>
+
+      <!-- ===== Before you start ===== -->
+      <section id="before-you-start">
+        <div class="text">
+          <h2 data-i18n="art.three-things-worth-knowing-before">Tři věci, které je&nbsp;dobré vědět, než&nbsp;začnete</h2>
+          <p data-i18n="art.goal-the-outcome-the-user"><strong>Cíl.</strong> Výsledek, který potřebuje uživatel i&nbsp;byznys.</p>
+          <p data-i18n="art.context-product-type-b2b-or"><strong>Kontext.</strong> Typ produktu, B2B nebo B2C, zkušenosti publika,&nbsp;zařízení.</p>
+          <p data-i18n="art.constraints-technical-legal-and-resource"><strong>Omezení.</strong> Technické, právní a&nbsp;kapacitní limity a&nbsp;také očekávání klienta. Díky nim nehledáte nemožné a&nbsp;později podle nich filtrujete, co&nbsp;jste&nbsp;nasbírali.</p>
+        </div>
+      </section>
+
+      <!-- ===== Service type and funnel ===== -->
+      <section id="service-type">
+        <div class="text">
+          <h2 data-i18n="art.identify-the-service-type-and">Určete typ služby a&nbsp;fázi&nbsp;trychtýře</h2>
+          <p data-i18n="art.the-service-type-and-the">Typ služby a&nbsp;fáze trychtýře určují cíl obrazovky, a&nbsp;tím i&nbsp;to,&nbsp;které produkty lze srovnávat. Onboarding v&nbsp;SaaS a&nbsp;pokladna v&nbsp;e-shopu řeší různé úkoly, i&nbsp;když obojí vypadá jako vícekrokový&nbsp;formulář.</p>
+          <p data-i18n="art.below-i-ve-drawn-a">Níže jsem pro&nbsp;každý typ služby nakreslil zjednodušený&nbsp;trychtýř.</p>
+        </div>
+
+        <div class="slider" id="funnels" role="region" aria-roledescription="carousel" aria-label="Trychtýře podle typu služby" data-i18n-attrs="aria-label:art.slider.label">
+          <div class="slider-view">
+            <ul class="slides" tabindex="0" aria-label="Snímky s trychtýři" data-i18n-attrs="aria-label:art.slider.slides">
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="1 ze 3: SaaS" data-i18n-attrs="aria-label:art.slider.slide1">
+              <img class="f f-shape" src="/assets/writing/funnel.svg" width="429" height="454" alt="" style="--y:146;--h:454">
+              <span class="f f-sep" style="--y:222"></span>
+              <span class="f f-sep" style="--y:356"></span>
+              <span class="f f-sep" style="--y:490"></span>
+              <h3 class="f f-title" style="--y:60" data-i18n="art.saas">SaaS</h3>
+              <p class="f f-sub" style="--y:100" data-i18n="art.software-as-a-service-apps">Software jako služba. Aplikace a&nbsp;online&nbsp;služby</p>
+              <p class="f f-stage" style="--y:172" data-i18n="art.onboarding-activation">Onboarding,&nbsp;aktivace</p>
+              <p class="f f-stage" style="--y:254" data-i18n="art.usage-aha-moment">Používání&nbsp;→ aha&nbsp;moment</p>
+              <p class="f f-stage f-stage--2" style="--y:278" data-i18n="art.freemium-paywall-free-trial">Freemium&nbsp;→ Paywall&nbsp;→ Zkušební&nbsp;verze</p>
+              <ul class="f f-labels" style="--y:310">
+                <li data-i18n="art.custom-flows-business-specific-logic">Vlastní flow, byznysová&nbsp;logika</li>
+              </ul>
+              <p class="f f-stage f-wrap" style="--y:388;--w:222" data-i18n="art.upgrade-to-a-paid-plan">Přechod na&nbsp;placený tarif, pravidelná&nbsp;platba</p>
+              <ul class="f f-labels" style="--y:444">
+                <li data-i18n="art.payment">Platba</li>
+              </ul>
+              <p class="f f-stage" style="--y:522" data-i18n="art.retention-upsell">Retence,&nbsp;upsell</p>
+              <ul class="f f-labels" style="--y:554">
+                <li data-i18n="art.account">Účet</li>
+              </ul>
+              <p class="f f-stage" style="--y:626" data-i18n="art.subscription-renewal-upgrade">Obnovení předplatného,&nbsp;upgrade</p>
+            </li>
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="2 ze 3: E-commerce" data-i18n-attrs="aria-label:art.slider.slide2">
+              <img class="f f-shape" src="/assets/writing/funnel.svg" width="429" height="454" alt="" style="--y:156;--h:454">
+              <span class="f f-sep" style="--y:260"></span>
+              <span class="f f-sep" style="--y:394"></span>
+              <span class="f f-sep" style="--y:504"></span>
+              <h3 class="f f-title" style="--y:50" data-i18n="art.e-commerce">E-commerce</h3>
+              <p class="f f-sub f-wrap" style="--y:90;--w:345" data-i18n="art.stores-and-any-services-with">Obchody a&nbsp;všechny služby s&nbsp;katalogem a&nbsp;procesem výběru a&nbsp;nákupu</p>
+              <p class="f f-stage" style="--y:182" data-i18n="art.finding-a-product-comparing-options">Hledání zboží, porovnání&nbsp;variant</p>
+              <ul class="f f-labels" style="--y:214">
+                <li data-i18n="art.catalog">Katalog</li>
+              </ul>
+              <p class="f f-stage" style="--y:292" data-i18n="art.building-trust-in-the-product">Důvěra v&nbsp;produkt,<br>přidání do&nbsp;košíku</p>
+              <ul class="f f-labels" style="--y:348">
+                <li data-i18n="art.product-page">Stránka&nbsp;produktu</li>
+              </ul>
+              <p class="f f-stage" style="--y:426" data-i18n="art.checkout-and-payment">Pokladna a&nbsp;platba</p>
+              <ul class="f f-labels" style="--y:458">
+                <li data-i18n="art.cart">Košík</li>
+                <li data-i18n="art.payment">Platba</li>
+                <li data-i18n="art.identification">Identifikace</li>
+              </ul>
+              <p class="f f-stage" style="--y:532" data-i18n="art.delivery-and-pickup">Doručení a&nbsp;vyzvednutí</p>
+              <ul class="f f-labels" style="--y:564">
+                <li data-i18n="art.account">Účet</li>
+              </ul>
+              <p class="f f-stage" style="--y:636" data-i18n="art.repeat-purchases">Opakované&nbsp;nákupy</p>
+            </li>
+            <li class="slide" role="group" aria-roledescription="slide" aria-label="3 ze 3: Služby" data-i18n-attrs="aria-label:art.slider.slide3">
+              <img class="f f-shape" src="/assets/writing/funnel-tall.svg" width="429" height="482" alt="" style="--y:132;--h:482">
+              <span class="f f-sep" style="--y:236"></span>
+              <span class="f f-sep" style="--y:394"></span>
+              <span class="f f-sep" style="--y:504"></span>
+              <h3 class="f f-title" style="--y:46" data-i18n="art.services">Služby</h3>
+              <p class="f f-sub" style="--y:86" data-i18n="art.informational-websites-that-sell-services">Informační weby, které prodávají&nbsp;služby</p>
+              <p class="f f-stage" style="--y:158" data-i18n="art.finding-a-service-studying-the">Hledání služby, studium&nbsp;podmínek</p>
+              <ul class="f f-labels" style="--y:190">
+                <li data-i18n="art.home">Úvod</li>
+                <li data-i18n="art.catalog">Katalog</li>
+                <li data-i18n="art.portfolio">Portfolio</li>
+                <li data-i18n="art.pricing">Ceník</li>
+                <li data-i18n="art.plans">Tarify</li>
+              </ul>
+              <p class="f f-stage f-wrap" style="--y:268;--w:216" data-i18n="art.building-trust-in-the-company">Důvěra ve&nbsp;firmu a&nbsp;službu</p>
+              <ul class="f f-labels" style="--y:324">
+                <li data-i18n="art.about">O&nbsp;nás</li>
+                <li data-i18n="art.partners">Partneři</li>
+                <li data-i18n="art.team">Tým</li>
+                <li data-i18n="art.careers">Kariéra</li>
+              </ul>
+              <ul class="f f-labels" style="--y:348">
+                <li data-i18n="art.press">Tisk</li>
+                <li data-i18n="art.blog">Blog</li>
+                <li data-i18n="art.detail-page">Detailní&nbsp;stránka</li>
+              </ul>
+              <p class="f f-stage" style="--y:426" data-i18n="art.first-contact-first-payment">První kontakt, první&nbsp;platba</p>
+              <ul class="f f-labels" style="--y:458">
+                <li data-i18n="art.cart">Košík</li>
+                <li data-i18n="art.direction">Oblast&nbsp;služeb</li>
+                <li data-i18n="art.cta-section">CTA&nbsp;sekce</li>
+              </ul>
+              <p class="f f-stage" style="--y:536" data-i18n="art.service-delivery">Poskytnutí&nbsp;služby</p>
+              <ul class="f f-labels" style="--y:568">
+                <li data-i18n="art.account">Účet</li>
+              </ul>
+              <p class="f f-stage" style="--y:640" data-i18n="art.repeat-purchases">Opakované&nbsp;nákupy</p>
+            </li>
+            </ul>
+            <button class="slider-btn slider-btn--prev" type="button" aria-label="Předchozí snímek" data-i18n-attrs="aria-label:art.slider.prev" disabled><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
+            <button class="slider-btn slider-btn--next" type="button" aria-label="Další snímek" data-i18n-attrs="aria-label:art.slider.next"><img src="/assets/icons/chevron-right.svg" width="20" height="20" alt=""></button>
+          </div>
+          <div class="dots">
+          <button class="dot" type="button" aria-label="Zobrazit snímek 1: SaaS" data-i18n-attrs="aria-label:art.slider.dot1" aria-current="true"></button>
+          <button class="dot" type="button" aria-label="Zobrazit snímek 2: E-commerce" data-i18n-attrs="aria-label:art.slider.dot2"></button>
+          <button class="dot" type="button" aria-label="Zobrazit snímek 3: Služby" data-i18n-attrs="aria-label:art.slider.dot3"></button>
+          </div>
+        </div>
+
+        <div class="text">
+          <p data-i18n="art.once-you-know-the-stage">Jakmile znáte fázi, přestanete hledat „reference pro&nbsp;fintech“ a&nbsp;začnete hledat „onboarding a&nbsp;aktivaci v&nbsp;SaaS“. Okruh vhodných produktů se&nbsp;rozšíří za&nbsp;hranice vašeho oboru a&nbsp;samotné hledání se&nbsp;zpřesní: porovnáváte řešení stejného&nbsp;úkolu.</p>
+        </div>
+      </section>
+
+      <!-- ===== Scenario and products ===== -->
+      <section id="scenario">
+        <div class="text">
+          <h2 data-i18n="art.describe-the-scenario-and-decide">Popište scénář a&nbsp;rozhodněte, čí&nbsp;produkty&nbsp;prozkoumat</h2>
+          <p data-i18n="art.compare-scenarios-not-whole-products">Porovnávejte scénáře, ne&nbsp;celé produkty. Nejdřív popište ten svůj bez&nbsp;rozhraní: co&nbsp;chce uživatel získat a&nbsp;jaké kroky k&nbsp;tomu&nbsp;vedou.</p>
+          <p data-i18n="art.then-look-for-products-that">Pak hledejte produkty, které to&nbsp;už&nbsp;řeší, a&nbsp;postupujte od&nbsp;nejbližších ke&nbsp;vzdálenějším:</p>
+          <p data-i18n="art.direct-competitors-the-same-product"><strong>Přímí konkurenti.</strong> Stejný produkt pro&nbsp;stejné&nbsp;publikum.</p>
+          <p data-i18n="art.adjacent-products-the-same-category"><strong>Příbuzné produkty.</strong> Stejná kategorie, jiný cenový segment nebo&nbsp;publikum.</p>
+          <p data-i18n="art.neighboring-fields-the-same-mechanic"><strong>Sousední obory.</strong> Stejná mechanika jinde: ověřování dokladů najdete v&nbsp;bankách, carsharingu i&nbsp;pronájmech&nbsp;bydlení.</p>
+          <p data-i18n="art.market-leaders-from-any-industry"><strong>Lídři trhu.</strong> Z&nbsp;jakéhokoli oboru. Jejich řešení bývají podložená&nbsp;výzkumem.</p>
+        </div>
+      </section>
+
+      <!-- ===== Patterns ===== -->
+      <section id="patterns">
+        <div class="text">
+          <h2 data-i18n="art.break-the-task-into-familiar">Rozložte úkol na&nbsp;známé&nbsp;vzory</h2>
+          <p data-i18n="art.most-tasks-are-assembled-from">Většina úkolů se&nbsp;skládá z&nbsp;částí, které už&nbsp;byly mnohokrát vyřešeny: katalog, detailní stránka, košík. Lidé vědí, jak tyto části fungují v&nbsp;jiných produktech, a&nbsp;čekají, že&nbsp;ten váš bude fungovat stejně (Jakobův zákon). Pojmenujte proto vzory ve&nbsp;svém úkolu a&nbsp;ke&nbsp;každému hledejte reference. Níže je&nbsp;mapa těch&nbsp;nejčastějších.</p>
+        </div>
+
+        <div class="patterns" id="pattern-map">
+          <div class="row" id="pattern-authentication">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-authentication-head" aria-expanded="true" aria-controls="pattern-authentication-panel">
+                <img src="/assets/writing/patterns/fingerprint.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.authentication">Autentizace</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-authentication-panel" role="region" aria-labelledby="pattern-authentication-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.sign-up-sign-in-and">Registrace, přihlášení a&nbsp;kontroly, které potvrzují identitu&nbsp;uživatele.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.signup">Registrace</h4>
+                      <ul>
+                        <li data-i18n="art.via-socials">přes sociální&nbsp;sítě</li>
+                        <li data-i18n="art.via-email">e-mailem</li>
+                        <li data-i18n="art.via-phone">telefonem</li>
+                        <li data-i18n="art.specific-card-contract-number">specifické: číslo karty nebo&nbsp;smlouvy</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.2fa">2FA</h4>
+                      <ul>
+                        <li data-i18n="art.via-email">e-mailem</li>
+                        <li data-i18n="art.via-phone">telefonem</li>
+                        <li data-i18n="art.authenticator-apps">autentizační&nbsp;aplikace</li>
+                        <li data-i18n="art.passcode">přístupový&nbsp;kód</li>
+                        <li data-i18n="art.touch-id-face-id">Touch ID,&nbsp;Face&nbsp;ID</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="row-singles">
+                    <h4 data-i18n="art.consents-agreements">Souhlasy, smluvní&nbsp;podmínky</h4>
+                    <h4 data-i18n="art.login">Přihlášení</h4>
+                    <h4 data-i18n="art.password-reset">Obnova&nbsp;hesla</h4>
+                    <h4 data-i18n="art.identity-verification-kyc">Ověření totožnosti&nbsp;(KYC)</h4>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.kyc-also-used-in">Kde dál se&nbsp;používá&nbsp;KYC</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.fintech-and-crypto">Fintech a&nbsp;krypto</li>
+                      <li data-i18n="art.online-betting">Online&nbsp;sázení</li>
+                      <li data-i18n="art.mobile-operators">Mobilní&nbsp;operátoři</li>
+                      <li data-i18n="art.car-rental">Půjčovny&nbsp;aut</li>
+                      <li data-i18n="art.freelance-platforms">Freelance&nbsp;platformy</li>
+                      <li data-i18n="art.telehealth">Telemedicína</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-onboarding">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-onboarding-head" aria-expanded="true" aria-controls="pattern-onboarding-panel">
+                <img src="/assets/writing/patterns/rocket.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.onboarding-and-activation">Onboarding a&nbsp;aktivace</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-onboarding-panel" role="region" aria-labelledby="pattern-onboarding-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.the-first-run-experience-that">První spuštění, které nového uživatele dovede k&nbsp;hlavní hodnotě&nbsp;produktu.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.first-screens">První&nbsp;obrazovky</h4>
+                      <ul>
+                        <li data-i18n="art.splash-screen">Splash&nbsp;screen</li>
+                        <li data-i18n="art.welcome-screen">Uvítací&nbsp;obrazovka</li>
+                        <li data-i18n="art.feature-carousel">Karusel&nbsp;funkcí</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.new-account">Nový&nbsp;účet</h4>
+                      <ul>
+                        <li><button class="row-link" type="button" data-open="pattern-authentication" data-i18n="art.authentication">Autentizace</button></li>
+                        <li data-i18n="art.account-setup">Nastavení&nbsp;účtu</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.guidance">Průvodce</h4>
+                      <ul>
+                        <li data-i18n="art.getting-started-guide">Průvodce prvními&nbsp;kroky</li>
+                        <li data-i18n="art.product-tour-with-tooltips">Prohlídka produktu s&nbsp;tooltipy</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.activation-examples">Příklady&nbsp;aktivace</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.music-first-playlist">Hudba: první&nbsp;playlist</li>
+                      <li data-i18n="art.fitness-first-workout">Fitness: první&nbsp;trénink</li>
+                      <li data-i18n="art.messaging-first-message">Zprávy: první&nbsp;zpráva</li>
+                      <li data-i18n="art.ride-hailing-first-ride">Taxi: první&nbsp;jízda</li>
+                      <li data-i18n="art.file-storage-first-shared-folder">Úložiště: první sdílená&nbsp;složka</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-catalog">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-catalog-head" aria-expanded="true" aria-controls="pattern-catalog-panel">
+                <img src="/assets/writing/patterns/catalog.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.catalog">Katalog</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-catalog-panel" role="region" aria-labelledby="pattern-catalog-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.a-large-set-of-items">Velká sada položek, které uživatelé prohlížejí, hledají, filtrují a&nbsp;řadí.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.structure">Struktura</h4>
+                      <ul>
+                        <li data-i18n="art.category-tree-and-mega-menu">Strom kategorií a&nbsp;mega&nbsp;menu</li>
+                        <li data-i18n="art.nested-subcategories">Vnořené&nbsp;podkategorie</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.finding-items">Hledání&nbsp;položek</h4>
+                      <ul>
+                        <li data-i18n="art.filters-and-sorting">Filtry a&nbsp;řazení</li>
+                        <li data-i18n="art.search-and-results-page">Vyhledávání a&nbsp;stránka&nbsp;výsledků</li>
+                        <li data-i18n="art.item-comparison">Porovnání&nbsp;položek</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.variations">Varianty</h4>
+                      <ul>
+                        <li data-i18n="art.catalogs-of-brands-series-and">Katalogy značek, řad a&nbsp;kolekcí</li>
+                        <li data-i18n="art.ready-made-sets-of-products">Hotové sady produktů: recepty, návrhy&nbsp;pokojů</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Kde se&nbsp;používá&nbsp;také</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.job-boards">Pracovní&nbsp;portály</li>
+                      <li data-i18n="art.real-estate-listings">Realitní&nbsp;inzerce</li>
+                      <li data-i18n="art.travel-booking">Rezervace&nbsp;cest</li>
+                      <li data-i18n="art.review-sites">Recenzní&nbsp;weby</li>
+                      <li data-i18n="art.library-catalogs">Knihovní&nbsp;katalogy</li>
+                      <li data-i18n="art.knowledge-bases">Znalostní&nbsp;báze</li>
+                      <li data-i18n="art.task-trackers">Nástroje na&nbsp;správu&nbsp;úkolů</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-detail">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-detail-head" aria-expanded="true" aria-controls="pattern-detail-panel">
+                <img src="/assets/writing/patterns/pagetext.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.detail-page">Detailní stránka</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-detail-panel" role="region" aria-labelledby="pattern-detail-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.the-page-with-full-information">Stránka s&nbsp;úplnými informacemi o&nbsp;jedné položce, kde se&nbsp;uživatel rozhoduje, co&nbsp;udělá&nbsp;dál.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.options">Možnosti</h4>
+                      <ul>
+                        <li data-i18n="art.variants-size-color">Varianty: velikost,&nbsp;barva</li>
+                        <li data-i18n="art.bundles">Balíčky</li>
+                        <li><button class="row-link" type="button" data-open="pattern-configurator" data-i18n="art.configurator-and-form">Konfigurátor a&nbsp;formulář</button></li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.content">Obsah</h4>
+                      <ul>
+                        <li data-i18n="art.text-key-facts-tables-reviews">Text, klíčová fakta, tabulky,&nbsp;recenze</li>
+                        <li data-i18n="art.photos-and-video">Fotky a&nbsp;video</li>
+                        <li data-i18n="art.carousels-and-accordions">Karusely a&nbsp;akordeony</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Kde se&nbsp;používá&nbsp;také</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.property-listing">Realitní&nbsp;inzerát</li>
+                      <li data-i18n="art.job-posting">Pracovní&nbsp;inzerát</li>
+                      <li data-i18n="art.hotel-page">Stránka&nbsp;hotelu</li>
+                      <li data-i18n="art.app-store-page">Stránka aplikace v&nbsp;obchodě</li>
+                      <li data-i18n="art.course-page">Stránka&nbsp;kurzu</li>
+                      <li data-i18n="art.task-card">Karta&nbsp;úkolu</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-configurator">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-configurator-head" aria-expanded="true" aria-controls="pattern-configurator-panel">
+                <img src="/assets/writing/patterns/input.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.configurator-and-form">Konfigurátor a&nbsp;formulář</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-configurator-panel" role="region" aria-labelledby="pattern-configurator-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.step-by-step-input-where">Zadávání krok za&nbsp;krokem, kde každá odpověď ovlivňuje další krok i&nbsp;konečný&nbsp;výsledek.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.entering-data">Zadávání&nbsp;údajů</h4>
+                      <ul>
+                        <li data-i18n="art.text">Text</li>
+                        <li data-i18n="art.numbers-exact-value-estimate-or">Čísla: přesná hodnota, odhad nebo&nbsp;rozsah</li>
+                        <li data-i18n="art.location-address-or-map">Místo: adresa nebo&nbsp;mapa</li>
+                        <li data-i18n="art.file-upload">Nahrání&nbsp;souboru</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.choosing-from-a-list">Výběr ze&nbsp;seznamu</h4>
+                      <ul>
+                        <li data-i18n="art.one-option">Jedna&nbsp;možnost</li>
+                        <li data-i18n="art.several-options">Více&nbsp;možností</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.result">Výsledek</h4>
+                      <ul>
+                        <li data-i18n="art.summary-of-choices">Shrnutí&nbsp;výběru</li>
+                        <li data-i18n="art.submitting-the-form">Odeslání&nbsp;formuláře</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Kde se&nbsp;používá&nbsp;také</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.car-configurator">Konfigurátor&nbsp;auta</li>
+                      <li data-i18n="art.custom-furniture">Nábytek na&nbsp;míru</li>
+                      <li data-i18n="art.insurance-quote">Kalkulace&nbsp;pojištění</li>
+                      <li data-i18n="art.tax-return">Daňové&nbsp;přiznání</li>
+                      <li data-i18n="art.account-opening">Založení&nbsp;účtu</li>
+                      <li data-i18n="art.software-setup">Nastavení&nbsp;softwaru</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-custom">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-custom-head" aria-expanded="true" aria-controls="pattern-custom-panel">
+                <img src="/assets/writing/patterns/process.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.custom-flow">Vlastní flow</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-custom-panel" role="region" aria-labelledby="pattern-custom-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.the-core-flows-of-a">Klíčová flow produktu postavená na&nbsp;jeho vlastních pravidlech a&nbsp;datech.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.work-tools">Pracovní&nbsp;nástroje</h4>
+                      <ul>
+                        <li data-i18n="art.dashboards">Dashboardy</li>
+                        <li data-i18n="art.help-desks">Helpdesky</li>
+                        <li data-i18n="art.task-trackers">Nástroje na&nbsp;správu&nbsp;úkolů</li>
+                        <li data-i18n="art.crm-and-erp">CRM a&nbsp;ERP</li>
+                        <li data-i18n="art.learning-platforms-lms">Vzdělávací platformy&nbsp;(LMS)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.online-services">Online&nbsp;služby</h4>
+                      <ul>
+                        <li data-i18n="art.booking-calendars-reservations-tickets">Rezervace: kalendáře, místa,&nbsp;vstupenky</li>
+                        <li data-i18n="art.ad-platforms">Reklamní&nbsp;platformy</li>
+                        <li data-i18n="art.fintech-and-banking">Fintech a&nbsp;bankovnictví</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.platforms">Platformy</h4>
+                      <ul>
+                        <li data-i18n="art.freelance-marketplaces">Freelance&nbsp;tržiště</li>
+                        <li data-i18n="art.file-storage">Úložiště&nbsp;souborů</li>
+                        <li data-i18n="art.intranets">Intranety</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <p class="row-tip" data-i18n="art.start-with-products-of-the">Začněte u&nbsp;produktů stejného typu. Pak zjistěte, které vzory z&nbsp;tohoto seznamu obsahují: většina vlastních flow stejně zahrnuje katalog, detailní stránku nebo&nbsp;formulář.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-business">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-business-head" aria-expanded="true" aria-controls="pattern-business-panel">
+                <img src="/assets/writing/patterns/luggage.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.business-specific-flows">Oborově specifická flow</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-business-panel" role="region" aria-labelledby="pattern-business-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.product-types-with-conventions-that">Typy produktů s&nbsp;konvencemi, které uživatelé už&nbsp;znají.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.communication">Komunikace</h4>
+                      <ul>
+                        <li data-i18n="art.messaging-apps">Chatovací&nbsp;aplikace</li>
+                        <li data-i18n="art.social-networks">Sociální&nbsp;sítě</li>
+                        <li data-i18n="art.dating-apps">Seznamky</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.maps-and-transport">Mapy a&nbsp;doprava</h4>
+                      <ul>
+                        <li data-i18n="art.maps-and-navigation">Mapy a&nbsp;navigace</li>
+                        <li data-i18n="art.taxi-and-car-sharing">Taxi a&nbsp;carsharing</li>
+                        <li data-i18n="art.logistics-and-routing">Logistika a&nbsp;plánování&nbsp;tras</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.media-and-games">Média a&nbsp;hry</h4>
+                      <ul>
+                        <li data-i18n="art.photo-and-video-editors">Foto a&nbsp;video&nbsp;editory</li>
+                        <li data-i18n="art.video-and-music-players">Video a&nbsp;hudební&nbsp;přehrávače</li>
+                        <li data-i18n="art.games">Hry</li>
+                        <li data-i18n="art.betting-and-casino-apps">Sázkové a&nbsp;kasinové&nbsp;aplikace</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.trading">Obchodování</h4>
+                      <ul>
+                        <li data-i18n="art.stock-and-crypto-exchanges">Akciové a&nbsp;krypto&nbsp;burzy</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <p class="row-tip" data-i18n="art.users-learned-these-products-from">Uživatelé se&nbsp;tyto produkty naučili u&nbsp;lídrů trhu a&nbsp;čekají, že&nbsp;ten váš bude fungovat stejně. Začněte u&nbsp;přímých&nbsp;konkurentů.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-cart">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-cart-head" aria-expanded="true" aria-controls="pattern-cart-panel">
+                <img src="/assets/writing/patterns/cart.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.cart">Košík</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-cart-panel" role="region" aria-labelledby="pattern-cart-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.a-place-to-collect-items">Místo, kde položky nasbíráte, zkontrolujete a&nbsp;upravíte a&nbsp;pak je&nbsp;všechny najednou&nbsp;potvrdíte.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.before-checkout">Před&nbsp;pokladnou</h4>
+                      <ul>
+                        <li data-i18n="art.mini-cart">Mini&nbsp;košík</li>
+                        <li data-i18n="art.cart-page">Stránka&nbsp;košíku</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.checkout">Pokladna</h4>
+                      <ul>
+                        <li data-i18n="art.checkout-page">Stránka&nbsp;pokladny</li>
+                        <li data-i18n="art.add-ons-insurance-carry-in">Doplňky: pojištění, výnos do&nbsp;bytu</li>
+                        <li data-i18n="art.delivery-pickup-point-or-courier">Doručení: výdejní místo nebo&nbsp;kurýr</li>
+                        <li><button class="row-link" type="button" data-open="pattern-authentication" data-i18n="art.authentication">Autentizace</button></li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Kde se&nbsp;používá&nbsp;také</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.trip-booking-flight-hotel-transfer">Rezervace cesty: let, hotel,&nbsp;transfer</li>
+                      <li data-i18n="art.quote-request-b2b">Poptávka&nbsp;(B2B)</li>
+                      <li data-i18n="art.repeat-grocery-order">Opakovaná objednávka&nbsp;potravin</li>
+                      <li data-i18n="art.bundle-builder">Sestavení&nbsp;balíčku</li>
+                      <li data-i18n="art.bulk-file-actions">Hromadné akce se&nbsp;soubory</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-payment">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-payment-head" aria-expanded="true" aria-controls="pattern-payment-panel">
+                <img src="/assets/writing/patterns/creditcard.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.payment">Platba</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-payment-panel" role="region" aria-labelledby="pattern-payment-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.choosing-a-payment-method-confirming">Výběr způsobu platby, potvrzení částky a&nbsp;jasný&nbsp;výsledek.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.payment-method">Způsob&nbsp;platby</h4>
+                      <ul>
+                        <li data-i18n="art.new-or-saved-card">Nová nebo uložená&nbsp;karta</li>
+                        <li data-i18n="art.pay-later-credit-or-installments">Platba později: úvěr nebo&nbsp;splátky</li>
+                        <li data-i18n="art.local-payment-methods">Místní platební&nbsp;metody</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.steps">Kroky</h4>
+                      <ul>
+                        <li data-i18n="art.entering-payment-details">Zadání platebních&nbsp;údajů</li>
+                        <li data-i18n="art.payment-result-success-or-failure">Výsledek platby: úspěch nebo&nbsp;chyba</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Kde se&nbsp;používá&nbsp;také</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.subscriptions">Předplatné</li>
+                      <li data-i18n="art.in-app-purchases">Nákupy v&nbsp;aplikaci</li>
+                      <li data-i18n="art.wallet-top-ups">Dobití&nbsp;peněženky</li>
+                      <li data-i18n="art.utility-bills">Účty za&nbsp;energie</li>
+                      <li data-i18n="art.money-transfers">Převody&nbsp;peněz</li>
+                      <li data-i18n="art.invoices-and-payment-links">Faktury a&nbsp;platební&nbsp;odkazy</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row" id="pattern-account">
+            <h3 class="row-h">
+              <button class="row-head" type="button" id="pattern-account-head" aria-expanded="true" aria-controls="pattern-account-panel">
+                <img src="/assets/writing/patterns/usercircle.svg" width="24" height="24" alt="">
+                <span class="row-title" data-i18n="art.account">Účet</span>
+                <span class="row-toggle" aria-hidden="true"><img class="row-plus" src="/assets/writing/patterns/plus.svg" width="24" height="24" alt=""><img class="row-minus" src="/assets/writing/patterns/minus.svg" width="24" height="24" alt=""></span>
+              </button>
+            </h3>
+            <div class="row-panel" id="pattern-account-panel" role="region" aria-labelledby="pattern-account-head">
+              <div class="row-clip">
+                <div class="row-body">
+                  <p class="row-desc" data-i18n="art.a-user-s-personal-space">Osobní prostor uživatele pro&nbsp;profil, zabezpečení, platby a&nbsp;předvolby.</p>
+                  <hr>
+                  <div class="row-groups">
+                    <div>
+                      <h4 data-i18n="art.personal">Osobní</h4>
+                      <ul>
+                        <li data-i18n="art.profile">Profil</li>
+                        <li data-i18n="art.order-history">Historie&nbsp;objednávek</li>
+                        <li data-i18n="art.favorites">Oblíbené</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.loyalty">Věrnostní&nbsp;program</h4>
+                      <ul>
+                        <li data-i18n="art.wallet-and-balance">Peněženka a&nbsp;zůstatek</li>
+                        <li data-i18n="art.bonus-points-and-loyalty-cards">Bonusové body a&nbsp;věrnostní&nbsp;karty</li>
+                        <li data-i18n="art.gift-cards-and-member-status">Dárkové karty a&nbsp;členský&nbsp;status</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <h4 data-i18n="art.preferences-and-help">Předvolby a&nbsp;nápověda</h4>
+                      <ul>
+                        <li data-i18n="art.settings">Nastavení</li>
+                        <li data-i18n="art.notifications">Oznámení</li>
+                        <li data-i18n="art.support-requests">Požadavky na&nbsp;podporu</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <hr>
+                  <div class="row-used">
+                    <h4 data-i18n="art.also-used-in">Kde se&nbsp;používá&nbsp;také</h4>
+                    <ul class="chips">
+                      <li data-i18n="art.saas-workspace-billing-team">Pracovní prostor SaaS: fakturace,&nbsp;tým</li>
+                      <li data-i18n="art.store-account-orders-addresses">Účet v&nbsp;e-shopu: objednávky,&nbsp;adresy</li>
+                      <li data-i18n="art.public-profile-author-seller">Veřejný profil: autor,&nbsp;prodejce</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <script>
+          /* Pattern map: close all rows but the first, then toggle on click */
+          (function () {
+            var root = document.getElementById('pattern-map');
+            var rows = [].slice.call(root.querySelectorAll('.row'));
+            var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function set(row, open) {
+              row.classList.toggle('is-open', open);
+              row.querySelector('.row-head').setAttribute('aria-expanded', String(open));
+              var panel = row.querySelector('.row-panel');
+              if (open) panel.removeAttribute('inert'); else panel.setAttribute('inert', '');
+            }
+
+            rows.forEach(function (row, i) { set(row, i === 0); });
+            root.classList.add('is-ready');
+            requestAnimationFrame(function () {
+              requestAnimationFrame(function () { root.classList.add('is-animated'); });
+            });
+
+            root.addEventListener('click', function (e) {
+              var link = e.target.closest('.row-link');
+              if (link) {
+                var target = document.getElementById(link.getAttribute('data-open'));
+                var head = target.querySelector('.row-head');
+                set(target, true);
+                head.focus({ preventScroll: true });
+                head.scrollIntoView({ block: 'nearest', behavior: reduce ? 'auto' : 'smooth' });
+                return;
+              }
+              var clicked = e.target.closest('.row-head');
+              if (!clicked) return;
+              var row = clicked.closest('.row');
+              set(row, !row.classList.contains('is-open'));
+            });
+          })();
+        </script>
+
+        <div class="text">
+          <p data-i18n="art.a-catalog-is-needed-where">Katalog je&nbsp;potřeba tam, kde lidé přesně nevědí, co&nbsp;hledají: krok za&nbsp;krokem zužují výběr, dokud nedojdou ke&nbsp;správné položce. Pokud znají název, stačí&nbsp;vyhledávání.</p>
+          <p data-i18n="art.example-we-re-designing-a"><strong>Příklad.</strong> Navrhujeme aplikaci pro&nbsp;plánování výletů. Turista neví, co&nbsp;město nabízí, takže seznam míst je&nbsp;katalog. Stránka místa s&nbsp;fotkami a&nbsp;otevírací dobou je&nbsp;detailní stránka. Místa přidaná do&nbsp;výletu fungují jako košík. Reference teď můžete brát z&nbsp;e-shopů a&nbsp;rezervačních služeb, nejen z&nbsp;jiných cestovatelských&nbsp;aplikací.</p>
+          <p data-i18n="art.exception-in-niches-with-complex"><strong>Výjimka.</strong> V&nbsp;oborech se&nbsp;složitou byznysovou logikou (geoslužby, sociální sítě, chatovací aplikace) pomáhá abstrakce méně. Tam hledejte osvědčená řešení u&nbsp;přímých obdob: systémy jsou příliš složité na&nbsp;to,&nbsp;abyste vazby vymýšleli od&nbsp;nuly.</p>
+          <p data-i18n="art.behind-this-is-jakob-s">Stojí za&nbsp;tím <strong>Jakobův zákon</strong>: lidé tráví většinu času v&nbsp;jiných produktech a&nbsp;čekají, že&nbsp;ten váš bude fungovat stejně. Struktura, chování a&nbsp;ovládací prvky by&nbsp;měly působit povědomě; vlastní vizuální styl tomu&nbsp;nebrání.</p>
+        </div>
+      </section>
+
+      <!-- ===== Collect ===== -->
+      <section id="collect">
+        <div class="text">
+          <h2 data-i18n="art.collect-everything-that-catches-your">Sbírejte všechno, co&nbsp;vás&nbsp;zaujme</h2>
+          <p data-i18n="art.save-everything-you-like-and">Ukládejte všechno, co&nbsp;se&nbsp;vám líbí, a&nbsp;zatím nehodnoťte. Když začnete filtrovat příliš brzy, unikne vám nečekaný nález z&nbsp;jiného&nbsp;oboru.</p>
+          <p data-i18n="art.combine-sources-walk-through-the">Kombinujte zdroje. Projděte si&nbsp;flow sami, abyste viděli chyby, e-maily a&nbsp;to,&nbsp;co&nbsp;se&nbsp;stane při&nbsp;návratu. Využijte knihovny obrazovek, jako je&nbsp;Mobbin, a&nbsp;porovnejte jeden vzor napříč desítkami produktů. Podívejte se&nbsp;na&nbsp;výzkumy použitelnosti od&nbsp;Baymard Institute a&nbsp;Nielsen Norman&nbsp;Group.</p>
+          <p data-i18n="art.label-each-screen-right-away">Každou obrazovku hned popište: produkt, krok,&nbsp;vzor.</p>
+        </div>
+      </section>
+
+      <!-- ===== Analyze ===== -->
+      <section id="analyze">
+        <div class="text">
+          <h2 data-i18n="art.analyze-what-you-collected">Analyzujte, co&nbsp;jste&nbsp;nasbírali</h2>
+          <p data-i18n="art.a-reference-without-a-note">Reference bez&nbsp;poznámky je&nbsp;jen obrázek. Ke&nbsp;každé si&nbsp;zapište, co&nbsp;se&nbsp;pro&nbsp;váš úkol hodí, co&nbsp;ne&nbsp;a&nbsp;proč.</p>
+          <p data-i18n="art.ask-three-questions-which-user">Položte si&nbsp;tři otázky: jaký úkol uživatele a&nbsp;byznysu to&nbsp;řeší, co&nbsp;se&nbsp;děje před tím a&nbsp;po&nbsp;tom a&nbsp;je&nbsp;to&nbsp;určené pro&nbsp;publikum, jako je&nbsp;to&nbsp;vaše?</p>
+          <p data-i18n="art.compare-flows-by-the-same">Porovnávejte flow podle stejných kritérií v&nbsp;tabulce „produkt&nbsp;×&nbsp;kritérium“. Co&nbsp;mají všichni společné, je&nbsp;tržní norma. Kde se&nbsp;řešení liší, tam je&nbsp;prostor pro&nbsp;vaše vlastní&nbsp;hypotézy.</p>
+        </div>
+      </section>
+
+      <!-- ===== Cut ===== -->
+      <section id="cut">
+        <div class="text">
+          <h2 data-i18n="art.cut-what-you-don-t">Vyškrtněte, co&nbsp;nepotřebujete</h2>
+          <p data-i18n="art.run-what-you-ve-collected">Prožeňte nasbírané dvěma&nbsp;filtry.</p>
+          <p data-i18n="art.constraints-remove-what-doesn-t"><strong>Omezení.</strong> Odstraňte to,&nbsp;co&nbsp;se&nbsp;nevejde do&nbsp;technických, právních a&nbsp;kapacitních limitů, i&nbsp;kdyby to&nbsp;jinde fungovalo&nbsp;sebelépe.</p>
+          <p data-i18n="art.value-and-cost-weigh-how"><strong>Hodnota a&nbsp;náklady.</strong> Zvažte, nakolik řešení uživateli pomáhá a&nbsp;kolik stojí jeho realizace. Velká funkce bez&nbsp;jasné hodnoty jde pryč jako&nbsp;první.</p>
+        </div>
+      </section>
+
+      <!-- ===== Team check ===== -->
+      <section id="team-check">
+        <div class="text">
+          <h2 data-i18n="art.check-your-conclusions-with-the">Ověřte závěry s&nbsp;týmem</h2>
+          <p data-i18n="art.one-person-s-selection-stays">Výběr jednoho člověka zůstává hypotézou, dokud ho&nbsp;neuvidí ostatní. Ukažte analýzu produktovému manažerovi, vývojářům a&nbsp;klientovi: znají priority a&nbsp;omezení, o&nbsp;kterých možná&nbsp;nevíte.</p>
+          <p data-i18n="art.benchmarks-don-t-prove-a">Benchmarky nedokazují, že&nbsp;řešení bude fungovat i&nbsp;u&nbsp;vás. Konečnou zkouškou je&nbsp;uživatelské testování a&nbsp;analytika po&nbsp;spuštění.</p>
+        </div>
+      </section>
+
+      <!-- ===== Result ===== -->
+      <section id="result">
+        <div class="text">
+          <h2 data-i18n="art.what-you-end-up-with">Co&nbsp;máte na&nbsp;konci</h2>
+          <p data-i18n="art.a-list-of-the-patterns">Seznam vzorů, ze&nbsp;kterých se&nbsp;úkol skládá, tabulka „produkt&nbsp;×&nbsp;kritérium“, reference s&nbsp;poznámkami (co&nbsp;přebíráte, co&nbsp;jste zamítli a&nbsp;proč) a&nbsp;seznam otázek, které nikdo nepoložil, když se&nbsp;úkol poprvé&nbsp;probíral.</p>
+        </div>
+      </section>
+
+      <!-- ===== Mobbin and Claude ===== -->
+      <section id="mobbin-claude">
+        <div class="text">
+          <h2 data-i18n="art.doing-it-faster-with-mobbin">Rychleji s&nbsp;Mobbin a&nbsp;Claude</h2>
+          <p data-i18n="art.mobbin-has-an-mcp-server">Mobbin má&nbsp;MCP server, takže Claude může v&nbsp;jeho knihovně skutečných obrazovek a&nbsp;flow hledat za&nbsp;mě. Popíšu úkol, pošlu screenshot nebo přiložím brief a&nbsp;dostanu příklady z&nbsp;jiných produktů s&nbsp;odkazy zpět na&nbsp;Mobbin.</p>
+        </div>
+
+        <figure class="shot">
+          <img src="/assets/writing/mobbin-connector.png" width="750" height="517" alt="Stránka konektoru Mobbin v Claude: připojeno, s nástroji search_flows, search_screens a search_sections" data-i18n-attrs="alt:art.shot.alt" loading="lazy">
+        </figure>
+
+        <div class="text">
+          <p data-i18n="art.to-keep-every-search-in">Aby&nbsp;každé hledání postupovalo podle tohoto návodu, zabalil jsem kroky do&nbsp;skillu pro&nbsp;Claude. Ten z&nbsp;úkolu udělá vyhledávací dotazy, každý výsledek ověří podle jednoho kritéria a&nbsp;řekne, co&nbsp;nenašel.</p>
+          <p data-i18n="art.it-speeds-up-collecting-not">Zrychluje to&nbsp;sběr, ne&nbsp;přemýšlení. Poznámky, porovnání a&nbsp;škrty zůstávají na&nbsp;mně.</p>
+        </div>
+
+        <div class="skill-group">
+        <div class="skill" id="skill" data-collapse="Sbalit" data-copied="Zkopírováno" data-selected="Označeno" data-status-copied="SKILL.md zkopírován" data-status-selected="Text je označen, zkopírujte ho klávesnicí" data-i18n-attrs="data-collapse:art.skill.collapse data-copied:art.skill.copied data-selected:art.skill.selected data-status-copied:art.skill.status-copied data-status-selected:art.skill.status-selected">
+          <div class="skill-head">
+            <h3 class="skill-name">SKILL.md</h3>
+            <button class="skill-btn" type="button" id="skill-copy" data-i18n="art.copy">Kopírovat</button>
+            <a class="skill-btn" href="/assets/writing/reference-benchmarking.zip" download data-i18n="art.download-zip">Stáhnout ZIP</a>
+          </div>
+          <div class="skill-code" id="skill-code" role="region" aria-label="Obsah souboru SKILL.md" data-i18n-attrs="aria-label:art.skill.region" tabindex="0">
+            <pre><code>---
+name: reference-benchmarking
+description: Finds UI references in Mobbin and benchmarks them for a design task. Use when the user asks for references or how other products solve a screen or flow, or sends a screenshot or a brief.
+---
+
+# Finding references and benchmarking them
+
+Turn a design task into precise Mobbin searches, read what comes back, compare it and cut it down. Reply in the user's language. Write every Mobbin query and `task_intent` in English: the search is built around English screen and pattern names.
+
+The method comes from the article "Finding references and a bit about benchmarking" by Artem Shevliakov: https://artem-shevliakov.vercel.app/writing/references-and-benchmarks
+
+## Scale the work to the request
+
+- **Quick look.** The user wants examples ("show me login screens", "how do others do X"). Do sections 1 and 4, stop at five on-target products, and answer with references. Skip the framing, the table and the cuts. End with a one-line offer of the full benchmark.
+- **Full benchmark.** The user asks to compare or benchmark, attaches a brief, or says a decision depends on the answer. Do every section.
+
+When unsure, do the quick look.
+
+## 1. Read the input
+
+The input can be plain text, a screenshot, a brief, or a mix. Whatever it is, extract the same things before searching:
+
+| What | How it is used |
+|---|---|
+| Scenario, screen or element | The core of every query |
+| Product category (banking app, car sharing, B2B analytics) | A hint that pulls comparable products |
+| Platform | The `platform` parameter: `ios` or `web`. Mobbin has no Android; use `ios` and say so |
+| Named products | Filter results to them |
+| Goal and constraints | Used later to judge and cut. They do not go into queries |
+
+**Text.** Take the screen or flow in the user's own words.
+
+**Screenshot.** Look at the image first. Name three things: the screen type, the product category, and the platform (a status bar means `ios`; browser chrome or a wide layout means `web`). Then decide what the user wants from it: the same screen in other products (the default), one element of it, or the step before or after it. Search by what the screen or element is, not by how it looks; colors and layout words do not help. If the message does not say what they want and the options lead to different searches, ask one short question. Go by the image, even when it differs from what you know about the user's other projects. If the user's own product comes back in the results, drop it and say that it came back: it confirms the query hit the right pattern.
+
+**Brief or task description.** Read all of it. Pull out the goal, context and constraints, list the scenarios it covers, and pick the ones in scope. Search per scenario step or per pattern, never the brief as a whole. A constraint that implies its own screen or state ("only the owner can upgrade" means a screen for everyone else) becomes a query of its own.
+
+Briefs and screenshots of unreleased work are often confidential. Queries, `task_intent`, web searches and your reply carry only generic category and pattern words: no client name, no unreleased product name, no copied sentences.
+
+If the scenario, category or platform is missing and would change the search, ask once, in one message. Otherwise state your assumption and go on.
+
+## 2. Frame the task
+
+Name the service type and the funnel stage. They define the goal of the screen and which products are comparable.
+
+| Stage | Services | E-commerce | SaaS |
+|---|---|---|---|
+| 1 | Finding a service, studying the terms | Finding a product, comparing options | Onboarding, activation |
+| 2 | Trust in the company and the service | Trust in the product, adding to cart | Usage, aha moment |
+| 3 | First contact, first payment | Checkout and payment | Upgrade to a paid plan |
+| 4 | Service delivery | Delivery and pickup | Retention, upsell |
+| 5 | Repeat sales | Repeat purchases | Subscription renewal, upgrade |
+
+For mixed products pick the funnel by the scenario: a marketplace checkout is e-commerce, its seller dashboard is SaaS.
+
+Then describe the scenario without any interface (what the user wants to get, which steps it takes) and note whose products are worth a look, from near to far: direct competitors, adjacent products, neighboring fields with the same mechanic, market leaders from any industry.
+
+For a full benchmark, get three or four direct competitors by name before searching: take them from the brief, ask the user, or run a web search for the category. A product name is the only reliable way to get a direct competitor out of Mobbin.
+
+## 3. Break the task into patterns
+
+Most tasks are assembled from parts that have been solved many times. Each pattern becomes its own search, and the last column says where the less obvious references are.
+
+| Pattern | What it is | Less obvious places to look |
+|---|---|---|
+| Authentication | Sign-up, sign-in, password reset, 2FA, identity verification | Identity verification: fintech and crypto, online betting, mobile operators, car rental and sharing, short-term rentals, gig and freelance platforms |
+| Onboarding and activation | The path from first open to first value | Any product with a setup step before first use |
+| Catalog | A set of objects to search, filter and group | Task tracker, settings, template library, list of integrations |
+| Detail page | Extended information about one object | Product, task, customer or setting page |
+| Configurator and form | Step-by-step input and choices that build a result | Buying insurance, setting up a plan, creating an ad campaign |
+| Custom flows | Sequences specific to this product | Direct competitors |
+| Business-specific flows | Flows dictated by the domain | Direct competitors |
+| Cart | A place to gather selected items for one final action | Order, export list, comparison, bulk actions on files |
+| Payment | Paying once or setting up a recurring payment | Subscriptions, donations, top-ups |
+| Account | Profile, settings, plan and history | Any product with accounts |
+
+Not in the map, but they search well as patterns of their own: paywalls and upgrade prompts, limit and empty states, confirmation screens.
+
+Products built around one core mechanic (geo services, social networks, messengers) are harder to split. For them study how direct competitors built the whole system.
+
+## 4. Search Mobbin
+
+### Pick the tool
+
+| Need | Tool | Settings |
+|---|---|---|
+| Order of steps, where a step sits in a journey | `Mobbin:search_flows` | `limit` 3 to 5 |
+| One screen, state or element of an app, mobile or web | `Mobbin:search_screens` | `limit` 6 to 10, `mode` deep |
+| A block of a marketing website (hero, pricing, footer) | `Mobbin:search_sections` | `limit` 6 to 10, no platform |
+
+A web product's interface is a screen search with `platform` web. Section search matches the type of block, not what is inside it, so do not use it to find an element. Keep limits small: every result is an image, and large batches crowd out the analysis.
+
+### Set the match criterion
+
+Before the first call, write one sentence that says what must be on a screen for it to count, and put it in the plan line: "an open control for the interface language, reachable from the header". After each call keep only the results that meet it and note the count ("4 of 8"). The criterion keeps near-misses out of the answer and shows which query worked.
+
+- Include the state when the query asks for one, and the category when the user named one, with its boundary ("apps whose main content is meditation").
+- Judge by the control or step the user asked about, not by a similar one nearby. A weak match does not count.
+- A brief with several steps gets one criterion per step.
+
+### Write the query
+
+- **One screen or one journey per query.** Several needs mean several queries.
+- **For a screen or flow: product category + type.** "banking app onboarding", "car sharing app identity verification". A bare "onboarding" mixes every category together.
+- **For one element: the element, where it sits, and its state.** "language dropdown open in header". Here placement and state are what make a result match, so add them even when the user did not say them.
+- **Otherwise add a detail only when the task depends on it** ("checkout with payment method selection"). Every extra detail pushes the results toward one solution and hides the variety you are searching for. Do not add specifics the user did not mention.
+- **Name what is on the screen, not the goal.** "Trust" or "good onboarding" finds nothing useful. Translate the goal into screens first: "identity verification", "reviews", "money-back guarantee".
+- **Leave out** style words (modern, clean), negations, keyword lists and the platform. Phrase a negative state as an action: "ask admin to upgrade", not "cannot upgrade". Stay under 500 characters.
+
+The category is a soft hint, not a filter. It helps when the domain shapes the flow (banking onboarding, car sharing verification). Skip it for components every product has (language switcher, search, settings), unless the user tied the request to a category: the category words collide with content and pull the wrong products.
+
+### Use Mobbin's words
+
+Mobbin labels every screen with its own terms. When one fits, use its words in the query in place of a looser synonym, as plain text without the ampersand ("subscription paywall"). The lists are partial; when nothing fits, use plain words.
+
+| Looking for | Mobbin's label |
+|---|---|
+| First screen with sign-up and log-in buttons | Welcome &amp; Get Started |
+| Questions and setup right after sign-up | Account Setup |
+| Registration, sign-in | Signup, Login |
+| Paywall, choice of plan | Subscription &amp; Paywall, Pricing |
+| Balance, cards, accounts | Wallet &amp; Balance |
+| A screen with nothing in it yet | Empty State |
+| Profile | My Account &amp; Profile |
+| Announcement of a feature | Feature Info |
+
+Flow actions: Creating Account, Onboarding, Logging In, Subscribing &amp; Upgrading, Purchasing &amp; Ordering, Adding &amp; Creating, Editing &amp; Updating, Selecting &amp; Choosing, Inviting Teammates &amp; Friends, Enabling &amp; Disabling, Uploading &amp; Downloading, Scanning, Deleting &amp; Deactivating Account, Giving Feedback.
+
+UI elements: Dialog, Bottom Sheet, Full-Screen Overlay, Select, Text Field, Checkbox, Segmented Control, Tab, Tab Bar, Top Navigation Bar, Toolbar, Card, Tile, Chip, Badge, Banner, Carousel, Stacked List, Table, Progress Indicator, Floating Action Button, Avatar.
+
+### Three kinds of search
+
+1. **In the category.** The query with the user's product category. Skip it for universal components.
+2. **By pattern.** The pattern alone, without the category: "driver license verification", "upgrade plan with number of seats selection". This pulls the same step from neighboring fields and is where the non-obvious references come from. Mobbin's own tool hints say to always include the kind of app; drop it here on purpose.
+3. **By product.** A product name plus the screen of the key step: "ClickUp upgrade plan seats". A looser query ("ClickUp upgrade plan") mostly returns pricing tables. Run one for each competitor named in section 2. Use screen search for this: flow search filters to the product but ranks its journeys poorly.
+
+How many to run:
+
+- **Quick look.** One search: in the category if the user named one, by pattern otherwise. Run a second only if fewer than five on-target products came back. To widen it, try a sibling category (sleep or breathing apps next to meditation) and label those results; repeating the same query mostly returns more screens of the same products.
+- **Brief with several steps.** One pattern search per step first. Then product searches for the named competitors on the key step. Add one flow search for the whole journey when the order of steps matters. About ten calls in total, and five to ten products in the comparison for the whole task.
+- **Rare states.** Role-restricted and error states are rarely in the library. Give them one call, then report the gap.
+
+Say the plan in one line before the first call ("Searching Mobbin: web screens for a language dropdown in the header") and start; do not wait for approval. The final reply lists the queries instead.
+
+### Tune and page
+
+- `deep` mode reads the intent. When few screens match, it fills the batch with near-misses, so expect to discard part of a batch for a rare state.
+- `standard` mode matches the words literally and is noisier; keep its limit small. Use it when deep keeps returning a neighboring screen type instead of the one asked for (a settings page instead of a header control).
+- Pass the ids you have already seen in `exclude_screen_ids`, across different queries too. It excludes screens, not products. For flows and sections raise `page`.
+- Weak results: remove the detail, then the category. If the state itself is rare, say so; do not loosen the query until it means something else.
+- Use the same `task_intent` (one generic English sentence) on every call for one task. Set `output_destination` to `chat` when answering in the conversation and `doc` when the user asked for a document.
+- If a result carries an `ai_usage_notice`, show its text as its own block, word for word.
+- On a rate-limit error wait, then run the calls one at a time. If Mobbin is not connected, say so and use web search instead.
+
+### Read the results
+
+- Look at every image before describing it. Do not describe a screen from its name or metadata. If a preview is too small to read, leave it out.
+- A flow result shows only a sample of its screens (for example 5 of 14). Describe what you saw, link to the flow for the rest, and search screens for a step the sample skipped if you have calls left.
+- One reference is one product. Add a second link for the same product only when it shows a different state.
+- Results from a sibling category that arrive unasked may be listed, labeled as such; they do not count as on target.
+- When more than eight results are on target, keep the ones that differ most from each other.
+- Do not pad the answer with off-target screens. Report gaps as what the search returned ("the search returned no other meditation apps"), not as what Mobbin lacks.
+- Link each reference to its `mobbin_url`. The `image_url` expires.
+- Save to a Mobbin collection only when the user asks: `Mobbin:create_collection`, then `Mobbin:save_content`.
+
+### Examples
+
+**Text.** Input: "нужны рефы на онбординг для финтех приложения, ios"
+Reading: quick look; onboarding flow; fintech app; `ios`.
+Searches: flows "fintech app onboarding".
+
+**Screenshot.** Input: a web header with an open language list and "как это решают другие?"
+Reading: quick look; one element; `web`; a universal component, so no category.
+Criterion: an open control for the interface language, reachable from the header.
+Search: screens "language dropdown open in header"; if deep returns settings pages, repeat in `standard`.
+
+**Brief.** Input: a document asking to add a driving licence check before the first rental in a car sharing app, with a deadline and a no-manual-review constraint.
+Reading: full benchmark; Services, stage 3; pattern: Authentication, identity verification; `ios`.
+Competitors, by web search: three car sharing products by name.
+Searches: screens "driver license verification"; flows "car sharing app identity verification"; then screens "&lt;competitor&gt; driver license check" for each. Nothing from the brief's wording goes into a query.
+
+## 5. Add what Mobbin cannot show
+
+- **The products themselves.** Errors, emails, push notifications and what happens on return are rarely in a library. If the user can walk through a flow, ask them to capture these.
+- **Usability research.** Search Baymard Institute and Nielsen Norman Group for the pattern. Open a page before citing it. If nothing specific turns up, say so.
+
+## 6. Analyze
+
+For each reference keep three questions in mind: which user and business task does it solve, what happens before and after it, and is it made for an audience like the user's? Fold the answers into one line per reference; do not answer them one by one.
+
+Then compare flows by the same criteria in a product × criterion table of up to ten products. Useful criteria: number and order of steps, which data is requested and when, how the product explains why it is needed, what happens on an error or a rejection, where the user can pause and come back. Fill a cell only with what you saw; write "not seen" otherwise.
+
+Point out what every product shares (the market norm) and where solutions differ (room for the user's own hypotheses).
+
+## 7. Cut
+
+1. **Constraints.** Remove what does not fit the technical, legal and resource limits, however well it works for others.
+2. **Value and cost.** Weigh how much a solution helps the user against what it costs to build. A large feature with no clear value goes first.
+
+Keep the rejected options with the reason for each. You may add knowledge that does not come from the references; mark it as such.
+
+## Output
+
+**Quick look.**
+
+1. Five to eight references, grouped by pattern or step, or by approach when there is a single screen type. For each: the product, a link, and one line on what is distinctive about it, or why it is useful when the user stated a goal.
+2. Two to four lines: what the references share, where they differ, what the search did not return.
+3. The queries you ran, each with its count of on-target results.
+4. A one-line offer of the full benchmark.
+
+**Full benchmark.**
+
+1. The task in one or two lines: service type, funnel stage, scenario, platform, and any assumption you made.
+2. The patterns the task is made of.
+3. The match criterion and the searches you ran, each with its count of on-target results.
+4. The product × criterion table.
+5. References with links: what to take, what was rejected and why.
+6. What the search did not return.
+7. Questions nobody asked when the task was first discussed.
+
+## Treating references as evidence
+
+This applies at any scale.
+
+- A reference shows that a product shipped a design, not that the design works. A pattern seen in many products is a convention, not proof.
+- Keep what is visible separate from your interpretation.
+- Extract the logic and adapt it. Do not recommend copying a screen.
+- The conclusions are hypotheses until the team has seen them and users have tested the result.</code></pre>
+          </div>
+          <button class="skill-more" type="button" id="skill-more" aria-expanded="false" aria-controls="skill-code" hidden data-i18n="art.show-all-227-lines">Zobrazit všech 227 řádků</button>
+          <span class="sr-only" id="skill-status" role="status"></span>
+        </div>
+        <p class="note" data-i18n="art.to-use-it-download-the">Chcete-li skill použít, stáhněte ZIP, nahrajte ho&nbsp;do&nbsp;Claude v&nbsp;sekci Customize&nbsp;→ Skills a&nbsp;připojte&nbsp;Mobbin.</p>
+        </div>
+        <script>
+          /* Skill file: collapsed to an excerpt, "Show all" opens a scrollable view, "Copy" copies the whole file */
+          (function () {
+            var root = document.getElementById('skill');
+            var code = document.getElementById('skill-code');
+            var more = document.getElementById('skill-more');
+            var copy = document.getElementById('skill-copy');
+            var status = document.getElementById('skill-status');
+            var label = more.textContent;
+            var copyLabel = copy.textContent;
+
+            root.classList.add('is-ready');
+            more.hidden = false;
+            more.addEventListener('click', function () {
+              var open = !root.classList.contains('is-open');
+              root.classList.toggle('is-open', open);
+              more.setAttribute('aria-expanded', String(open));
+              more.textContent = open ? root.getAttribute('data-collapse') : label;
+              if (!open) code.scrollTop = 0;
+            });
+
+            var timer;
+            copy.addEventListener('click', function () {
+              var text = code.querySelector('code').textContent + '\n';
+              function done(ok) {
+                copy.textContent = root.getAttribute(ok ? 'data-copied' : 'data-selected');
+                status.textContent = root.getAttribute(ok ? 'data-status-copied' : 'data-status-selected');
+                clearTimeout(timer);
+                timer = setTimeout(function () { copy.textContent = copyLabel; status.textContent = ''; }, 2000);
+              }
+              function select() {
+                var range = document.createRange();
+                range.selectNodeContents(code.querySelector('code'));
+                var selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                done(false);
+              }
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () { done(true); }, select);
+              } else {
+                select();
+              }
+            });
+          })();
+        </script>
+
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    (function () {
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* Side menu: mark the section that is being read */
+      var links = [].slice.call(document.querySelectorAll('#toc a'));
+      var sections = links.map(function (a) { return document.getElementById(a.hash.slice(1)); });
+      var spyQueued = false;
+      function spy() {
+        spyQueued = false;
+        var current = 0;
+        sections.forEach(function (s, i) { if (s.getBoundingClientRect().top <= 120) current = i; });
+        links.forEach(function (a, i) {
+          if (i === current) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+        });
+      }
+      window.addEventListener('scroll', function () {
+        if (!spyQueued) { spyQueued = true; requestAnimationFrame(spy); }
+      }, { passive: true });
+      spy();
+
+      /* Funnel slider: arrows, dots and swipe share one scroll position */
+      var slider = document.getElementById('funnels');
+      var track = slider.querySelector('.slides');
+      var slides = [].slice.call(track.children);
+      var dots = [].slice.call(slider.querySelectorAll('.dot'));
+      var prev = slider.querySelector('.slider-btn--prev');
+      var next = slider.querySelector('.slider-btn--next');
+      var index = 0;
+
+      function step() { return slides.length > 1 ? slides[1].offsetLeft - slides[0].offsetLeft : track.clientWidth; }
+      function go(i) {
+        i = Math.max(0, Math.min(slides.length - 1, i));
+        track.scrollTo({ left: i * step(), behavior: reduce ? 'auto' : 'smooth' });
+      }
+      function update() {
+        var i = Math.round(track.scrollLeft / step());
+        if (i === index) return;
+        index = i;
+        dots.forEach(function (d, n) {
+          if (n === index) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current');
+        });
+        var active = document.activeElement;
+        prev.disabled = index === 0;
+        next.disabled = index === slides.length - 1;
+        if (active === prev && prev.disabled) next.focus();
+        if (active === next && next.disabled) prev.focus();
+      }
+      var sliderQueued = false;
+      track.addEventListener('scroll', function () {
+        if (!sliderQueued) { sliderQueued = true; requestAnimationFrame(function () { sliderQueued = false; update(); }); }
+      }, { passive: true });
+      prev.addEventListener('click', function () { go(index - 1); });
+      next.addEventListener('click', function () { go(index + 1); });
+      dots.forEach(function (d, n) { d.addEventListener('click', function () { go(n); }); });
+    })();
+  </script>
+<script src="/assets/lang-switcher.js" defer></script>
+</body>
+</html>
